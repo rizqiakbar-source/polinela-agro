@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dokumentasi Web Aplikasi Polinela Agro Digital</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        :root {
+            --primary: #2e7d32;
+            --primary-light: #e8f5e9;
+            --primary-dark: #1b5e20;
+            --accent: #f9a825;
+            --dark: #1a1a2e;
+            --gray: #64748b;
+            --light-gray: #f1f5f9;
+            --border: #e2e8f0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            color: #1e293b;
+            line-height: 1.7;
+            font-size: 11pt;
+            background: #fff;
+        }
+
+        @media print {
+            body { font-size: 10pt; line-height: 1.6; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            h2 { page-break-after: avoid; }
+            table { page-break-inside: auto; }
+            tr { page-break-inside: avoid; }
+        }
+
+        .container { max-width: 210mm; margin: 0 auto; padding: 15mm 20mm; }
+
+        .cover {
+            text-align: center;
+            padding: 40mm 20mm;
+            min-height: 280mm;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #f0fdf4 0%, #fff 50%, #fefce8 100%);
+            border: 3px solid var(--primary);
+            border-radius: 4px;
+        }
+        .cover-badge {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 6px 24px;
+            border-radius: 20px;
+            font-size: 9pt;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 24px;
+        }
+        .cover h1 {
+            font-size: 28pt;
+            font-weight: 800;
+            color: var(--primary-dark);
+            margin-bottom: 12px;
+            line-height: 1.2;
+        }
+        .cover .subtitle {
+            font-size: 14pt;
+            color: var(--gray);
+            font-weight: 400;
+            margin-bottom: 40px;
+        }
+        .cover-meta {
+            border-top: 2px solid var(--border);
+            padding-top: 30px;
+            margin-top: 20px;
+            font-size: 10pt;
+            color: var(--gray);
+        }
+        .cover-meta strong { color: var(--dark); }
+        .cover-logo { font-size: 50pt; margin-bottom: 16px; }
+
+        h2 {
+            font-size: 16pt;
+            font-weight: 800;
+            color: var(--primary-dark);
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 8px;
+            margin: 30px 0 16px 0;
+        }
+        h3 {
+            font-size: 13pt;
+            font-weight: 700;
+            color: #334155;
+            margin: 20px 0 10px 0;
+        }
+        h4 {
+            font-size: 11pt;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 14px 0 8px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0 20px 0;
+            font-size: 9.5pt;
+        }
+        th {
+            background: var(--primary);
+            color: white;
+            padding: 8px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 9pt;
+        }
+        td {
+            padding: 7px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        tr:nth-child(even) { background: #f8fafc; }
+        td:first-child { font-weight: 500; }
+
+        .info-box {
+            background: var(--primary-light);
+            border-left: 4px solid var(--primary);
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 6px 6px 0;
+            font-size: 10pt;
+        }
+        .warning-box {
+            background: #fef3c7;
+            border-left: 4px solid var(--accent);
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 0 6px 6px 0;
+            font-size: 10pt;
+        }
+
+        .flow {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin: 16px 0;
+        }
+        .flow-step {
+            background: var(--primary-light);
+            border: 1px solid #a5d6a7;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 8.5pt;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+        .flow-arrow {
+            color: var(--primary);
+            font-weight: bold;
+            font-size: 12pt;
+        }
+
+        code {
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 9pt;
+            color: #c2185b;
+        }
+
+        .section-num {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            width: 28px;
+            height: 28px;
+            line-height: 28px;
+            text-align: center;
+            border-radius: 50%;
+            font-size: 11pt;
+            font-weight: 700;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        p { margin: 8px 0; }
+        ul, ol { margin: 8px 0 8px 20px; }
+        li { margin: 4px 0; }
+
+        .toc { margin: 20px 0; }
+        .toc-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px dotted var(--border);
+            font-size: 10pt;
+        }
+        .toc-num { font-weight: 700; color: var(--primary); margin-right: 8px; }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 16px 0;
+        }
+        .stat-card {
+            background: var(--primary-light);
+            border: 1px solid #c8e6c9;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+        .stat-card .num {
+            font-size: 20pt;
+            font-weight: 800;
+            color: var(--primary-dark);
+        }
+        .stat-card .label {
+            font-size: 8pt;
+            color: var(--gray);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .print-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 30px;
+            font-size: 12pt;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(46, 125, 50, 0.4);
+            z-index: 999;
+            transition: transform 0.2s;
+        }
+        .print-btn:hover { transform: scale(1.05); }
+    </style>
+</head>
+<body>
+
+<button class="print-btn no-print" onclick="window.print()">🖨️ Cetak / Simpan PDF</button>
+
+<div class="container">
+
+    <!-- COVER PAGE -->
+    <div class="cover">
+        <div class="cover-logo">🌿</div>
+        <div class="cover-badge">Dokumentasi Teknis</div>
+        <h1>Polinela Agro Digital</h1>
+        <div class="subtitle">Pasar Digital Produk Perkebunan Kampus</div>
+        <p style="font-size: 11pt; color: #475569; max-width: 450px; margin: 0 auto 30px;">
+            Aplikasi e-commerce marketplace untuk produk perkebunan berbasis Teaching Factory (TEFA) Politeknik Negeri Lampung
+        </p>
+        <div class="cover-meta">
+            <p><strong>Framework:</strong> CodeIgniter 4.7.4 &nbsp;&bull;&nbsp; <strong>PHP:</strong> 8.2.12 &nbsp;&bull;&nbsp; <strong>Database:</strong> MariaDB 10.4.32</p>
+            <p><strong>Metode Pengembangan:</strong> Model Prototipe</p>
+            <p><strong>Evaluasi:</strong> System Usability Scale (SUS)</p>
+            <p style="margin-top: 16px; font-size: 9pt;">Politeknik Negeri Lampung &bull; 2026</p>
+        </div>
+    </div>
+
+    <!-- TABLE OF CONTENTS -->
+    <div class="page-break"></div>
+    <h2>Daftar Isi</h2>
+    <div class="toc">
+        <div class="toc-item"><span><span class="toc-num">1</span> Identitas Proyek</span></div>
+        <div class="toc-item"><span><span class="toc-num">2</span> Arsitektur & Teknologi</span></div>
+        <div class="toc-item"><span><span class="toc-num">3</span> Struktur Database (20 Tabel)</span></div>
+        <div class="toc-item"><span><span class="toc-num">4</span> Fitur-Fitur Aplikasi</span></div>
+        <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;&nbsp; 4.1 Modul Frontend (Pengunjung & Pembeli)</span></div>
+        <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;&nbsp; 4.2 Modul Autentikasi & RBAC</span></div>
+        <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;&nbsp; 4.3 Modul Admin Panel</span></div>
+        <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;&nbsp; 4.4 Modul Superadmin</span></div>
+        <div class="toc-item"><span><span class="toc-num">5</span> Komponen Pendukung</span></div>
+        <div class="toc-item"><span><span class="toc-num">6</span> Keamanan Sistem</span></div>
+        <div class="toc-item"><span><span class="toc-num">7</span> Testing</span></div>
+        <div class="toc-item"><span><span class="toc-num">8</span> Model Prototipe & Instrumen SUS</span></div>
+        <div class="toc-item"><span><span class="toc-num">9</span> Alur Bisnis Utama</span></div>
+        <div class="toc-item"><span><span class="toc-num">10</span> Statistik Proyek</span></div>
+    </div>
+
+    <!-- SECTION 1 -->
+    <div class="page-break"></div>
+    <h2><span class="section-num">1</span> Identitas Proyek</h2>
+    <table>
+        <tr><th style="width:35%">Aspek</th><th>Keterangan</th></tr>
+        <tr><td>Nama Aplikasi</td><td><strong>Polinela Agro Digital</strong></td></tr>
+        <tr><td>Tagline</td><td>Pasar Digital Produk Perkebunan Kampus</td></tr>
+        <tr><td>Jenis Aplikasi</td><td>E-Commerce Marketplace Produk Pertanian/Perkebunan</td></tr>
+        <tr><td>Institusi</td><td>Politeknik Negeri Lampung (Polinela)</td></tr>
+        <tr><td>Konsep</td><td>Teaching Factory (TEFA) — Unit usaha kampus menjual produk perkebunan secara digital</td></tr>
+        <tr><td>URL Lokal</td><td><code>http://localhost/polinela-agro/public/</code></td></tr>
+        <tr><td>Metode Pengembangan</td><td>Model Prototipe (Prototyping Model)</td></tr>
+        <tr><td>Evaluasi Usability</td><td>System Usability Scale (SUS) — 10 butir instrumen</td></tr>
+    </table>
+
+    <!-- SECTION 2 -->
+    <h2><span class="section-num">2</span> Arsitektur & Teknologi</h2>
+    <h3>2.1 Technology Stack</h3>
+    <table>
+        <tr><th style="width:25%">Komponen</th><th>Teknologi</th></tr>
+        <tr><td>Framework</td><td>CodeIgniter 4.7.4 (PHP MVC Framework)</td></tr>
+        <tr><td>Bahasa Server</td><td>PHP 8.2.12</td></tr>
+        <tr><td>Database</td><td>MariaDB 10.4.32 (MySQL-compatible)</td></tr>
+        <tr><td>Web Server</td><td>Apache 2.4.58 (XAMPP Stack)</td></tr>
+        <tr><td>Frontend CSS</td><td>Bootstrap 5 + Custom CSS</td></tr>
+        <tr><td>Frontend JS</td><td>Vanilla JavaScript + AJAX</td></tr>
+        <tr><td>Arsitektur</td><td>MVC (Model-View-Controller)</td></tr>
+        <tr><td>Timezone</td><td>Asia/Jakarta (WIB)</td></tr>
+        <tr><td>Charset</td><td>UTF-8 (utf8mb4_unicode_ci)</td></tr>
+    </table>
+
+    <h3>2.2 Alur Request MVC</h3>
+    <div class="info-box">
+        Browser → Apache (mod_rewrite) → <code>public/index.php</code> → Router → Filters (Auth/Admin) → Controller → Model (DB) + Libraries → Views → HTML Response
+    </div>
+
+    <h3>2.3 Struktur Direktori</h3>
+    <table>
+        <tr><th>Direktori</th><th>Isi</th><th>Jumlah</th></tr>
+        <tr><td><code>app/Controllers/</code></td><td>Controller frontend, admin, payment</td><td>34 file</td></tr>
+        <tr><td><code>app/Models/</code></td><td>Model database (ORM)</td><td>22 file</td></tr>
+        <tr><td><code>app/Views/</code></td><td>Template UI</td><td>66 file</td></tr>
+        <tr><td><code>app/Helpers/</code></td><td>Fungsi utilitas global</td><td>9 file</td></tr>
+        <tr><td><code>app/Libraries/</code></td><td>Class business logic</td><td>13 file</td></tr>
+        <tr><td><code>app/Filters/</code></td><td>Middleware keamanan</td><td>4 file</td></tr>
+        <tr><td><code>app/Database/Migrations/</code></td><td>Skema database versioned</td><td>20 file</td></tr>
+        <tr><td><code>app/Database/Seeds/</code></td><td>Data awal seeder</td><td>8 file</td></tr>
+    </table>
+
+    <!-- SECTION 3 -->
+    <div class="page-break"></div>
+    <h2><span class="section-num">3</span> Struktur Database (20 Tabel)</h2>
+    <table>
+        <tr><th>No</th><th>Tabel</th><th>Fungsi</th></tr>
+        <tr><td>1</td><td><code>users</code></td><td>Data pengguna (pembeli, admin unit, superadmin, pimpinan)</td></tr>
+        <tr><td>2</td><td><code>units</code></td><td>Unit usaha kampus TEFA</td></tr>
+        <tr><td>3</td><td><code>permissions</code></td><td>Hak akses role-based per modul (CRUD)</td></tr>
+        <tr><td>4</td><td><code>categories</code></td><td>Kategori produk perkebunan</td></tr>
+        <tr><td>5</td><td><code>products</code></td><td>Data produk (nama, harga, stok, berat, rating)</td></tr>
+        <tr><td>6</td><td><code>product_images</code></td><td>Galeri foto produk multi-image</td></tr>
+        <tr><td>7</td><td><code>stocks</code></td><td>Riwayat mutasi stok masuk/keluar</td></tr>
+        <tr><td>8</td><td><code>carts</code></td><td>Keranjang belanja per user</td></tr>
+        <tr><td>9</td><td><code>orders</code></td><td>Data pesanan (invoice, total, status)</td></tr>
+        <tr><td>10</td><td><code>order_details</code></td><td>Detail item per pesanan</td></tr>
+        <tr><td>11</td><td><code>payments</code></td><td>Data pembayaran & bukti transfer</td></tr>
+        <tr><td>12</td><td><code>shippings</code></td><td>Data pengiriman & tracking</td></tr>
+        <tr><td>13</td><td><code>reviews</code></td><td>Ulasan dan rating produk</td></tr>
+        <tr><td>14</td><td><code>notifications</code></td><td>Notifikasi internal</td></tr>
+        <tr><td>15</td><td><code>activity_logs</code></td><td>Audit trail aktivitas</td></tr>
+        <tr><td>16</td><td><code>wishlists</code></td><td>Produk favorit user</td></tr>
+        <tr><td>17</td><td><code>banners</code></td><td>Banner promosi homepage</td></tr>
+        <tr><td>18</td><td><code>vouchers</code></td><td>Voucher diskon</td></tr>
+        <tr><td>19</td><td><code>settings</code></td><td>Pengaturan toko & SEO</td></tr>
+        <tr><td>20</td><td><code>sus_responses</code></td><td>Hasil kuesioner SUS</td></tr>
+    </table>
+
+    <h3>Relasi Utama</h3>
+    <div class="info-box">
+        • <code>users</code> → <code>orders</code>, <code>carts</code>, <code>reviews</code>, <code>wishlists</code>, <code>notifications</code>, <code>sus_responses</code><br>
+        • <code>units</code> → <code>products</code>, <code>users</code> (admin unit)<br>
+        • <code>categories</code> → <code>products</code><br>
+        • <code>products</code> → <code>product_images</code>, <code>stocks</code>, <code>order_details</code>, <code>reviews</code><br>
+        • <code>orders</code> → <code>order_details</code>, <code>payments</code>, <code>shippings</code>
+    </div>
+
+    <!-- SECTION 4 -->
+    <div class="page-break"></div>
+    <h2><span class="section-num">4</span> Fitur-Fitur Aplikasi</h2>
+
+    <h3>4.1 Modul Frontend</h3>
+    <h4>🏠 Halaman Utama</h4>
+    <ul>
+        <li>Banner promosi carousel dinamis</li>
+        <li>8 produk unggulan (rating tertinggi) & 8 produk terbaru</li>
+        <li>Daftar kategori komoditas & unit usaha TEFA</li>
+        <li>Statistik transaksi & produk aktif</li>
+    </ul>
+
+    <h4>📦 Katalog & Detail Produk</h4>
+    <ul>
+        <li>Grid responsif dengan filter: kategori, unit, harga, kata kunci</li>
+        <li>Sorting: terbaru, laris, harga, rating</li>
+        <li>Detail produk: galeri multi-image, info unit, ulasan, produk terkait</li>
+        <li>API pencarian live search (autocomplete JSON)</li>
+    </ul>
+
+    <h4>🛒 Keranjang & Checkout</h4>
+    <ul>
+        <li>Tambah/update/hapus item (AJAX)</li>
+        <li>Checkout: alamat, ongkir otomatis, voucher diskon, pilih pembayaran</li>
+        <li>Generate invoice, kurangi stok, catat mutasi</li>
+    </ul>
+
+    <h4>💰 4 Metode Pembayaran</h4>
+    <table>
+        <tr><th>Metode</th><th>Keterangan</th></tr>
+        <tr><td>Transfer Bank Manual</td><td>Upload bukti ke 3 rekening (Mandiri, BNI, BRI)</td></tr>
+        <tr><td>COD</td><td>Bayar saat barang diterima</td></tr>
+        <tr><td>Midtrans</td><td>VA, QRIS, e-wallet (sandbox)</td></tr>
+        <tr><td>Xendit</td><td>Payment gateway alternatif (sandbox)</td></tr>
+    </table>
+
+    <h4>Fitur Pengguna Lainnya</h4>
+    <table>
+        <tr><th>Fitur</th><th>Keterangan</th></tr>
+        <tr><td>Riwayat Pesanan</td><td>Detail, upload bukti, konfirmasi terima, batalkan, invoice PDF</td></tr>
+        <tr><td>Ulasan & Rating</td><td>Bintang 1-5 + komentar per produk</td></tr>
+        <tr><td>Wishlist</td><td>Simpan/hapus produk favorit (toggle AJAX)</td></tr>
+        <tr><td>Profil & Alamat</td><td>Edit data diri, avatar, password, alamat pengiriman</td></tr>
+        <tr><td>Notifikasi</td><td>Status pesanan, konfirmasi pembayaran</td></tr>
+        <tr><td>Lacak Pengiriman</td><td>Tracking via nomor resi/invoice</td></tr>
+        <tr><td>Kuesioner SUS</td><td>Evaluasi usability 10 pertanyaan</td></tr>
+    </table>
+
+    <h3>4.2 Autentikasi & RBAC</h3>
+    <table>
+        <tr><th>Role</th><th>Akses</th></tr>
+        <tr><td><code>pembeli</code></td><td>Frontend: belanja, checkout, riwayat, profil, ulasan</td></tr>
+        <tr><td><code>admin_unit</code></td><td>Admin panel: kelola produk & pesanan unit sendiri</td></tr>
+        <tr><td><code>superadmin</code></td><td>Akses penuh semua modul admin + pengaturan sistem</td></tr>
+        <tr><td><code>pimpinan</code></td><td>Akses laporan & monitoring kinerja</td></tr>
+    </table>
+
+    <div class="page-break"></div>
+    <h3>4.3 Admin Panel</h3>
+    <table>
+        <tr><th>Modul</th><th>Fitur</th></tr>
+        <tr><td>Dashboard</td><td>Statistik ringkasan, grafik penjualan</td></tr>
+        <tr><td>Produk</td><td>CRUD, upload gambar, kelola stok, soft delete</td></tr>
+        <tr><td>Kategori</td><td>CRUD kategori komoditas, auto-slug</td></tr>
+        <tr><td>Pesanan</td><td>Daftar, detail, update status, cetak surat jalan</td></tr>
+        <tr><td>Pembayaran</td><td>Verifikasi bukti transfer, tolak pembayaran</td></tr>
+        <tr><td>Laporan</td><td>5 jenis: Penjualan, Keuangan, Produk Terlaris, Pelanggan, Stok</td></tr>
+        <tr><td>Review</td><td>Moderasi ulasan (approve/reject/delete)</td></tr>
+    </table>
+
+    <h3>4.4 Modul Superadmin</h3>
+    <table>
+        <tr><th>Modul</th><th>Fitur</th></tr>
+        <tr><td>Unit Usaha</td><td>CRUD unit TEFA, assign admin</td></tr>
+        <tr><td>Pengguna</td><td>Kelola user, toggle aktif, reset password</td></tr>
+        <tr><td>Banner</td><td>Kelola banner promosi homepage</td></tr>
+        <tr><td>Voucher</td><td>Buat & kelola voucher diskon</td></tr>
+        <tr><td>Ongkir</td><td>Tarif ongkos kirim per zona</td></tr>
+        <tr><td>Backup</td><td>Backup & download database</td></tr>
+        <tr><td>Log</td><td>Audit trail aktivitas sistem</td></tr>
+        <tr><td>Pengaturan</td><td>Setting toko, logo, SEO</td></tr>
+    </table>
+
+    <!-- SECTION 5 -->
+    <div class="page-break"></div>
+    <h2><span class="section-num">5</span> Komponen Pendukung</h2>
+
+    <h3>5.1 Libraries (13 Class)</h3>
+    <table>
+        <tr><th>Library</th><th>Fungsi</th></tr>
+        <tr><td><code>SusCalculator</code></td><td>Perhitungan skor SUS</td></tr>
+        <tr><td><code>ImageUploader</code></td><td>Upload & resize gambar</td></tr>
+        <tr><td><code>SlugGenerator</code></td><td>Generate slug unik</td></tr>
+        <tr><td><code>PdfGenerator</code></td><td>Generate laporan PDF</td></tr>
+        <tr><td><code>ExcelGenerator</code></td><td>Export ke Excel</td></tr>
+        <tr><td><code>CsvGenerator</code></td><td>Export ke CSV</td></tr>
+        <tr><td><code>ChartGenerator</code></td><td>Generate grafik</td></tr>
+        <tr><td><code>BarcodeGenerator</code></td><td>Barcode produk</td></tr>
+        <tr><td><code>QrCodeGenerator</code></td><td>QR code pembayaran</td></tr>
+        <tr><td><code>Midtrans</code></td><td>Payment gateway Midtrans</td></tr>
+        <tr><td><code>Xendit</code></td><td>Payment gateway Xendit</td></tr>
+        <tr><td><code>WhatsAppSender</code></td><td>Notifikasi WhatsApp</td></tr>
+        <tr><td><code>Notification</code></td><td>Notifikasi in-app</td></tr>
+    </table>
+
+    <h3>5.2 Helpers (9 File)</h3>
+    <table>
+        <tr><th>Helper</th><th>Fungsi Utama</th></tr>
+        <tr><td><code>app_helper</code></td><td><code>format_rupiah()</code>, <code>current_user()</code>, <code>log_system_activity()</code></td></tr>
+        <tr><td><code>auth_helper</code></td><td><code>logged_user()</code>, <code>is_logged_in()</code>, <code>user_can()</code></td></tr>
+        <tr><td><code>asset_helper</code></td><td><code>product_image_url()</code>, <code>user_avatar_url()</code></td></tr>
+        <tr><td><code>date_helper</code></td><td><code>indo_date()</code>, <code>relative_time()</code></td></tr>
+        <tr><td><code>format_helper</code></td><td><code>format_weight()</code>, <code>status_badge()</code>, <code>order_status_label()</code></td></tr>
+        <tr><td><code>number_helper</code></td><td><code>format_decimal()</code>, <code>format_percentage()</code></td></tr>
+        <tr><td><code>text_helper</code></td><td><code>generate_slug()</code>, <code>safe_excerpt()</code></td></tr>
+        <tr><td><code>menu_helper</code></td><td><code>is_active_menu()</code>, <code>admin_menu_items()</code></td></tr>
+        <tr><td><code>export_helper</code></td><td><code>generate_csv_download()</code></td></tr>
+    </table>
+
+    <h3>5.3 Filters (4 Middleware)</h3>
+    <table>
+        <tr><th>Filter</th><th>Fungsi</th></tr>
+        <tr><td><code>AuthFilter</code></td><td>Cek login, redirect ke <code>/login</code></td></tr>
+        <tr><td><code>AdminFilter</code></td><td>Cek role admin_unit/superadmin/pimpinan</td></tr>
+        <tr><td><code>SuperAdminFilter</code></td><td>Cek role superadmin only</td></tr>
+        <tr><td><code>RateLimitFilter</code></td><td>Anti brute-force login</td></tr>
+    </table>
+
+    <!-- SECTION 6 -->
+    <h2><span class="section-num">6</span> Keamanan Sistem</h2>
+    <table>
+        <tr><th>Fitur</th><th>Implementasi</th></tr>
+        <tr><td>CSRF Protection</td><td>Token <code>csrf_field()</code> di semua form POST</td></tr>
+        <tr><td>XSS Prevention</td><td><code>esc()</code> di semua output view</td></tr>
+        <tr><td>SQL Injection</td><td>Query Builder CI4 parameterized</td></tr>
+        <tr><td>Password Hashing</td><td>bcrypt via <code>password_hash()</code></td></tr>
+        <tr><td>Rate Limiting</td><td>Anti brute-force pada login</td></tr>
+        <tr><td>RBAC</td><td>4 level role user</td></tr>
+        <tr><td>Session Security</td><td>File-based, 2 jam expiration</td></tr>
+        <tr><td>Soft Delete</td><td>Produk tidak hilang permanen</td></tr>
+        <tr><td>Audit Trail</td><td><code>activity_logs</code> mencatat aksi penting</td></tr>
+    </table>
+
+    <!-- SECTION 7 -->
+    <h2><span class="section-num">7</span> Testing</h2>
+    <table>
+        <tr><th>Aspek</th><th>Detail</th></tr>
+        <tr><td>Framework</td><td>PHPUnit</td></tr>
+        <tr><td>File Test</td><td><code>tests/unit/SusCalculatorTest.php</code></td></tr>
+        <tr><td>Test Cases</td><td>3 test (skor maks 100, netral 50, min 0)</td></tr>
+    </table>
+
+    <!-- SECTION 8 -->
+    <div class="page-break"></div>
+    <h2><span class="section-num">8</span> Model Prototipe & Instrumen SUS</h2>
+
+    <h3>8.1 Tahapan Model Prototipe</h3>
+    <div class="flow">
+        <span class="flow-step">1. Analisis Kebutuhan</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-step">2. Desain Cepat</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-step">3. Bangun Prototipe</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-step">4. Evaluasi (SUS)</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-step">5. Perbaikan</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-step">6. Produk Final</span>
+    </div>
+
+    <h3>8.2 Instrumen SUS (10 Butir)</h3>
+    <table>
+        <tr><th>No</th><th>Pertanyaan</th><th>Tipe</th></tr>
+        <tr><td>Q1</td><td>Saya ingin sering menggunakan sistem Polinela Agro Digital ini</td><td style="color:green;font-weight:bold">Positif</td></tr>
+        <tr><td>Q2</td><td>Saya merasa sistem e-commerce ini rumit untuk digunakan</td><td style="color:red;font-weight:bold">Negatif</td></tr>
+        <tr><td>Q3</td><td>Saya merasa sistem ini mudah digunakan saat mencari & membeli produk</td><td style="color:green;font-weight:bold">Positif</td></tr>
+        <tr><td>Q4</td><td>Saya membutuhkan bantuan orang teknis untuk menggunakan sistem ini</td><td style="color:red;font-weight:bold">Negatif</td></tr>
+        <tr><td>Q5</td><td>Fitur-fitur (katalog, keranjang, checkout, verifikasi) berfungsi sangat baik</td><td style="color:green;font-weight:bold">Positif</td></tr>
+        <tr><td>Q6</td><td>Saya merasa ada terlalu banyak ketidakkonsistenan pada sistem ini</td><td style="color:red;font-weight:bold">Negatif</td></tr>
+        <tr><td>Q7</td><td>Saya rasa kebanyakan orang akan cepat belajar menggunakan sistem ini</td><td style="color:green;font-weight:bold">Positif</td></tr>
+        <tr><td>Q8</td><td>Saya merasa sistem ini sangat membingungkan saat digunakan</td><td style="color:red;font-weight:bold">Negatif</td></tr>
+        <tr><td>Q9</td><td>Saya merasa percaya diri & nyaman saat bertransaksi di sistem ini</td><td style="color:green;font-weight:bold">Positif</td></tr>
+        <tr><td>Q10</td><td>Saya perlu belajar banyak hal sebelum dapat menggunakan sistem ini</td><td style="color:red;font-weight:bold">Negatif</td></tr>
+    </table>
+
+    <h3>8.3 Rumus Perhitungan SUS</h3>
+    <div class="warning-box">
+        • Pertanyaan <strong>ganjil (positif)</strong>: skor kontribusi = jawaban − 1<br>
+        • Pertanyaan <strong>genap (negatif)</strong>: skor kontribusi = 5 − jawaban<br>
+        • <strong>Total SUS = (Σ skor kontribusi) × 2.5</strong><br>
+        • Rentang skor: <strong>0 — 100</strong>
+    </div>
+
+    <h3>8.4 Klasifikasi Hasil</h3>
+    <table>
+        <tr><th>Skor</th><th>Grade</th><th>Kategori</th><th>Interpretasi</th></tr>
+        <tr><td>0 — 49</td><td style="font-weight:bold;color:red">F</td><td>Poor (Buruk)</td><td>Perlu perbaikan signifikan</td></tr>
+        <tr><td>50 — 67</td><td style="font-weight:bold;color:orange">D/C</td><td>OK (Cukup)</td><td>Perlu peningkatan</td></tr>
+        <tr><td>68 — 80</td><td style="font-weight:bold;color:blue">B</td><td>Good (Baik)</td><td>Di atas rata-rata</td></tr>
+        <tr><td>81 — 100</td><td style="font-weight:bold;color:green">A</td><td>Excellent</td><td>Usability sangat baik</td></tr>
+    </table>
+
+    <h3>8.5 Kategori Responden</h3>
+    <table>
+        <tr><th>No</th><th>Kategori</th></tr>
+        <tr><td>1</td><td>Mahasiswa Polinela</td></tr>
+        <tr><td>2</td><td>Dosen / Tenaga Kependidikan</td></tr>
+        <tr><td>3</td><td>Pengelola Unit Usaha TEFA</td></tr>
+        <tr><td>4</td><td>Masyarakat Umum</td></tr>
+    </table>
+
+    <!-- SECTION 9 -->
+    <div class="page-break"></div>
+    <h2><span class="section-num">9</span> Alur Bisnis Utama</h2>
+
+    <h3>9.1 Alur Pembelian</h3>
+    <div class="flow">
+        <span class="flow-step">Buka Katalog</span><span class="flow-arrow">→</span>
+        <span class="flow-step">Pilih Produk</span><span class="flow-arrow">→</span>
+        <span class="flow-step">Lihat Detail</span><span class="flow-arrow">→</span>
+        <span class="flow-step">Tambah Keranjang</span><span class="flow-arrow">→</span>
+        <span class="flow-step">Checkout</span>
+    </div>
+    <div class="flow">
+        <span class="flow-step">Isi Alamat</span><span class="flow-arrow">→</span>
+        <span class="flow-step">Pilih Pembayaran</span><span class="flow-arrow">→</span>
+        <span class="flow-step">Bayar</span><span class="flow-arrow">→</span>
+        <span class="flow-step">Admin Verifikasi</span>
+    </div>
+    <div class="flow">
+        <span class="flow-step">Diproses</span><span class="flow-arrow">→</span>
+        <span class="flow-step">Dikirim</span><span class="flow-arrow">→</span>
+        <span class="flow-step">Konfirmasi Terima</span><span class="flow-arrow">→</span>
+        <span class="flow-step">Beri Ulasan ⭐</span>
+    </div>
+
+    <h3>9.2 Alur Admin</h3>
+    <div class="flow">
+        <span class="flow-step">Login</span><span class="flow-arrow">→</span>
+        <span class="flow-step">Dashboard</span><span class="flow-arrow">→</span>
+        <span class="flow-step">Kelola Produk</span><span class="flow-arrow">→</span>
+        <span class="flow-step">Verifikasi Bayar</span><span class="flow-arrow">→</span>
+        <span class="flow-step">Proses Pesanan</span><span class="flow-arrow">→</span>
+        <span class="flow-step">Laporan</span>
+    </div>
+
+    <!-- SECTION 10 -->
+    <h2><span class="section-num">10</span> Statistik Proyek</h2>
+    <div class="stat-grid">
+        <div class="stat-card"><div class="num">34</div><div class="label">Controllers</div></div>
+        <div class="stat-card"><div class="num">22</div><div class="label">Models</div></div>
+        <div class="stat-card"><div class="num">66</div><div class="label">Views</div></div>
+        <div class="stat-card"><div class="num">75+</div><div class="label">Routes</div></div>
+    </div>
+    <table>
+        <tr><th>Metrik</th><th>Jumlah</th></tr>
+        <tr><td>Controllers</td><td>34 (15 frontend + 14 admin + 5 payment)</td></tr>
+        <tr><td>Models</td><td>22 file</td></tr>
+        <tr><td>Views</td><td>66 file</td></tr>
+        <tr><td>Helpers</td><td>9 file</td></tr>
+        <tr><td>Libraries</td><td>13 file</td></tr>
+        <tr><td>Filters</td><td>4 file</td></tr>
+        <tr><td>Migrations</td><td>20 file</td></tr>
+        <tr><td>Tabel Database</td><td>20 tabel</td></tr>
+        <tr><td>Metode Pembayaran</td><td>4 (Transfer, COD, Midtrans, Xendit)</td></tr>
+        <tr><td>Jenis Laporan</td><td>5 (Penjualan, Keuangan, Produk, Pelanggan, Stok)</td></tr>
+        <tr><td>Format Export</td><td>3 (PDF, Excel, CSV)</td></tr>
+    </table>
+
+    <br>
+    <div class="info-box" style="text-align:center; margin-top: 30px;">
+        <strong>Polinela Agro Digital</strong> — Pasar Digital Produk Perkebunan Kampus<br>
+        Politeknik Negeri Lampung &bull; Model Prototipe &bull; 2026
+    </div>
+
+</div>
+</body>
+</html>

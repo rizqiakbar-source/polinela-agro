@@ -1,0 +1,53 @@
+@media print {
+    body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        font-size: 12pt !important;
+    }
+
+    .no-print,
+    .navbar,
+    .footer,
+    .admin-sidebar,
+    .admin-header,
+    .btn,
+    nav,
+    aside {
+        display: none !important;
+    }
+
+    .container,
+    .admin-main,
+    .card {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+    }
+
+    th, td {
+        border: 1px solid #333 !important;
+        padding: 6px 8px !important;
+    }
+
+    th {
+        background-color: #f1f5f9 !important;
+        color: #000 !important;
+    }
+
+    a {
+        text-decoration: none !important;
+        color: #000 !important;
+    }
+
+    @page {
+        margin: 1.5cm;
+    }
+}

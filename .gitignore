@@ -1,0 +1,66 @@
+# ================================================
+# Polinela Agro Digital - .gitignore
+# ================================================
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+
+# IDE / Editor
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.project
+.settings/
+
+# Environment & Secrets
+.env
+.env.backup
+
+# CodeIgniter 4 Writable
+writable/logs/*
+writable/cache/*
+writable/session/*
+writable/uploads/*
+writable/debugbar/*
+!writable/logs/.gitkeep
+!writable/cache/.gitkeep
+!writable/session/.gitkeep
+!writable/uploads/.gitkeep
+!writable/debugbar/.gitkeep
+
+# Vendor (Composer)
+/vendor/
+
+# Node (jika ada frontend build)
+/node_modules/
+package-lock.json
+
+# PHPUnit Cache
+.phpunit.cache/
+.phpunit.result.cache
+
+# Build & Temp
+*.tmp
+*.bak
+*.log
+/build/
+
+# Docker
+docker-compose.override.yml
+
+# Uploaded User Content
+public/uploads/products/*
+public/uploads/payments/*
+public/uploads/avatars/*
+!public/uploads/products/.gitkeep
+!public/uploads/payments/.gitkeep
+!public/uploads/avatars/.gitkeep
+
+# Compiled Documentation
+docs/*.pdf
+docs/ERD.png

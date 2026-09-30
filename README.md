@@ -130,7 +130,7 @@ polinela-agro/
 
 ## 👥 Tim Pengembang
 
-**Program Studi D3/D4 Manajemen Informatika**  
+**Program Studi D3 Manajemen Informatika**  
 **Politeknik Negeri Lampung**
 
 | No | Nama | NPM |

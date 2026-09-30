@@ -13,8 +13,13 @@
 
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
         <div>
-            <div class="d-flex align-items-center gap-2 mb-1">
+            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
                 <h3 class="fw-extrabold mb-0">Pesanan #<?= esc($order['order_number']) ?></h3>
+                <?php if (!empty($unit)): ?>
+                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1">
+                    <i class="bi bi-shop me-1"></i><?= esc($unit['nama_unit']) ?>
+                </span>
+                <?php endif; ?>
                 <?= status_badge($order['status']) ?>
             </div>
             <small class="text-muted"><i class="bi bi-clock me-1"></i> Waktu Transaksi: <?= format_tanggal($order['created_at']) ?></small>
@@ -80,7 +85,7 @@
                             <tr>
                                 <td class="ps-4 py-3">
                                     <div class="d-flex align-items-center gap-3">
-                                        <img src="<?= base_url('assets/img/products/' . ($d['gambar_utama'] ?: 'default-product.png')) ?>" 
+                                        <img src="<?= product_image_url($d['gambar_utama'] ?? '') ?>" 
                                              class="rounded-3 border" 
                                              style="width: 50px; height: 50px; object-fit: cover;"
                                              onerror="this.src='https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=150&auto=format&fit=crop&q=80';">
@@ -161,40 +166,162 @@
                 </div>
             </div>
 
-            <!-- Upload Bukti Bayar (Jika Transfer Manual) -->
-            <?php if ($order['status'] === 'pending' && ($payment['metode'] ?? '') === 'transfer'): ?>
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-warning">
-                <h6 class="fw-bold text-dark mb-2"><i class="bi bi-upload text-warning me-1"></i> Unggah Bukti Transfer</h6>
-                <p class="small text-muted mb-3">
-                    Silakan transfer tepat sebesar <strong><?= format_rupiah($order['grand_total']) ?></strong> ke rekening resmi Polinela:
+            <!-- Informasi Transaksi Multi-Toko 1x Bayar (Jika Ada) -->
+            <?php if (!empty($sibling_orders) && count($sibling_orders) > 1): ?>
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-success bg-opacity-10 border-start border-4 border-success mb-4">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <i class="bi bi-cart-check-fill text-success fs-5"></i>
+                    <strong class="text-success-emphasis small">Transaksi Gabungan Multi-Toko</strong>
+                </div>
+                <p class="small text-muted mb-2" style="font-size: 0.78rem;">
+                    Pesanan ini bagian dari transaksi <strong>#<?= esc($payment['no_transaksi']) ?></strong> mencakup <strong><?= count($sibling_orders) ?> unit toko</strong>. Cukup 1x bayar & 1x unggah bukti untuk seluruh toko.
                 </p>
-                <div class="p-2 bg-light rounded-3 small mb-3 border font-monospace">
-                    <strong>Mandiri:</strong> 114-00-8899123-4<br>
-                    <strong>BRI:</strong> 0098-01-000456-30-2<br>
-                    <span class="text-muted">a.n POLINELA TEFA</span>
+                <div class="p-2 bg-white rounded-3 border small mb-2">
+                    <div class="d-flex justify-content-between align-items-center text-muted" style="font-size: 0.75rem;">
+                        <span>Total Bayar Semua Toko:</span>
+                        <strong class="text-success fs-6"><?= format_rupiah($total_trx_amount) ?></strong>
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap gap-1">
+                    <?php foreach ($sibling_orders as $so): ?>
+                    <a href="<?= base_url('pesanan/detail/' . $so['order_number']) ?>" class="badge <?= ($so['order_number'] === $order['order_number']) ? 'bg-success text-white' : 'bg-white text-dark border' ?> text-decoration-none small py-1 px-2">
+                        #<?= esc($so['order_number']) ?> (<?= esc($so['nama_unit'] ?? 'Unit') ?>)
+                    </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <!-- Bagian Instruksi & Penyelesaian Pembayaran -->
+            <?php if ($order['status'] === 'pending'): ?>
+                <?php $metode = strtolower($payment['metode'] ?? 'transfer'); ?>
+
+                <?php if ($metode === 'cod'): ?>
+                <!-- Panel Pembayaran COD -->
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-success">
+                    <h6 class="fw-bold text-dark mb-2"><i class="bi bi-cash-stack text-success me-1"></i> Bayar di Tempat (COD)</h6>
+                    <p class="small text-muted mb-3">
+                        Total tagihan sebesar <strong><?= format_rupiah($order['grand_total']) ?></strong> dapat Anda bayarkan secara tunai langsung kepada kurir kampus atau kasir Teaching Factory saat pesanan diterima.
+                    </p>
+                    <form action="<?= base_url('pesanan/konfirmasi-cod/' . $order['order_number']) ?>" method="post">
+                        <?= csrf_field() ?>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success btn-sm py-2 fw-bold">
+                                <i class="bi bi-check2-circle me-1"></i> Konfirmasi Pesanan COD Siap Diproses
+                            </button>
+                        </div>
+                    </form>
                 </div>
 
-                <form action="<?= base_url('pesanan/upload-bukti') ?>" method="post" enctype="multipart/form-data">
-                    <?= csrf_field() ?>
-                    <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
-
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold">Pilih Foto Struk / Bukti Transfer:</label>
-                        <input type="file" name="bukti_bayar" class="form-control form-control-sm" accept="image/*" required>
+                <?php elseif ($metode === 'qris'): ?>
+                <!-- Panel Pembayaran QRIS -->
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-danger">
+                    <h6 class="fw-bold text-dark mb-2"><i class="bi bi-qr-code-scan text-danger me-1"></i> Pembayaran QRIS Nasional</h6>
+                    <p class="small text-muted mb-2">
+                        Pindai QRIS di bawah ini menggunakan GoPay, OVO, Dana, ShopeePay, BCA, atau Mobile Banking lainnya:
+                    </p>
+                    <div class="text-center p-3 bg-light rounded-3 mb-3 border">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=<?= urlencode('POLINELA-AGRO-' . $order['order_number'] . '-' . (int)$order['grand_total']) ?>" 
+                             alt="QRIS Polinela" class="img-fluid rounded border shadow-sm mb-2" style="max-width: 180px;">
+                        <div class="fw-bold text-dark small">NMID: ID1020038912831</div>
+                        <div class="text-success fw-bold fs-6 mt-1"><?= format_rupiah($order['grand_total']) ?></div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold">Nama Bank Pengirim & Rekening Asal:</label>
-                        <input type="text" name="atas_nama_pengirim" class="form-control form-control-sm" placeholder="Contoh: Budi Pratama - BCA" required>
+                    <form action="<?= base_url('pesanan/upload-bukti') ?>" method="post" enctype="multipart/form-data">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Unggah Tangkapan Layar (Screenshot) Sukses QRIS:</label>
+                            <input type="file" name="bukti_bayar" class="form-control form-control-sm" accept="image/*" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Nama Akun E-Wallet / Bank Anda:</label>
+                            <input type="text" name="atas_nama_pengirim" class="form-control form-control-sm" placeholder="Contoh: GoPay - Budi Pratama" required>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-agro btn-sm py-2 fw-bold">
+                                <i class="bi bi-cloud-upload me-1"></i> Konfirmasi Pembayaran QRIS
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <?php elseif ($metode === 'va'): ?>
+                <!-- Panel Pembayaran Virtual Account -->
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-info">
+                    <h6 class="fw-bold text-dark mb-2"><i class="bi bi-credit-card-2-front text-info me-1"></i> Nomor Virtual Account (VA)</h6>
+                    <p class="small text-muted mb-2">
+                        Silakan transfer tepat sebesar <strong><?= format_rupiah($order['grand_total']) ?></strong> ke salah satu nomor VA resmi kampus berikut:
+                    </p>
+                    <div class="p-3 bg-light rounded-3 small mb-3 border font-monospace">
+                        <div class="mb-2">
+                            <span class="text-muted d-block">Bank Mandiri VA:</span>
+                            <strong class="fs-6 text-primary">88712-<?= substr(preg_replace('/[^0-9]/', '', $order['order_number']), -8) ?: '20260928' ?></strong>
+                        </div>
+                        <div>
+                            <span class="text-muted d-block">Bank BRI (BRIVA):</span>
+                            <strong class="fs-6 text-success">12891-<?= substr(preg_replace('/[^0-9]/', '', $order['order_number']), -8) ?: '20260928' ?></strong>
+                        </div>
                     </div>
 
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-agro btn-sm py-2">
-                            <i class="bi bi-cloud-upload me-1"></i> Kirim Bukti Pembayaran
-                        </button>
+                    <form action="<?= base_url('pesanan/upload-bukti') ?>" method="post" enctype="multipart/form-data">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Pilih Bukti Transfer / Resi VA:</label>
+                            <input type="file" name="bukti_bayar" class="form-control form-control-sm" accept="image/*" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Nama Bank Pengirim & Pemilik Rekening:</label>
+                            <input type="text" name="atas_nama_pengirim" class="form-control form-control-sm" placeholder="Contoh: Mandiri Livin - Budi" required>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-agro btn-sm py-2 fw-bold">
+                                <i class="bi bi-cloud-upload me-1"></i> Kirim Bukti Pembayaran VA
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <?php else: ?>
+                <!-- Panel Pembayaran Transfer Bank Manual -->
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-warning">
+                    <h6 class="fw-bold text-dark mb-2"><i class="bi bi-upload text-warning me-1"></i> Unggah Bukti Transfer</h6>
+                    <p class="small text-muted mb-3">
+                        <?php if (!empty($sibling_orders) && count($sibling_orders) > 1): ?>
+                        Silakan transfer <strong>1x pembayaran gabungan</strong> sebesar <strong><?= format_rupiah($total_trx_amount) ?></strong> untuk seluruh unit ke rekening resmi Polinela:
+                        <?php else: ?>
+                        Silakan transfer tepat sebesar <strong><?= format_rupiah($order['grand_total']) ?></strong> ke rekening resmi Polinela:
+                        <?php endif; ?>
+                    </p>
+                    <div class="p-3 bg-light rounded-3 small mb-3 border font-monospace">
+                        <strong>Mandiri:</strong> 114-00-8899123-4<br>
+                        <strong>BRI:</strong> 0098-01-000456-30-2<br>
+                        <span class="text-muted">a.n POLINELA TEFA</span>
                     </div>
-                </form>
-            </div>
+
+                    <form action="<?= base_url('pesanan/upload-bukti') ?>" method="post" enctype="multipart/form-data">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Pilih Foto Struk / Bukti Transfer:</label>
+                            <input type="file" name="bukti_bayar" class="form-control form-control-sm" accept="image/*" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Nama Bank Pengirim & Rekening Asal:</label>
+                            <input type="text" name="atas_nama_pengirim" class="form-control form-control-sm" placeholder="Contoh: Budi Pratama - BCA" required>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-agro btn-sm py-2 fw-bold">
+                                <i class="bi bi-cloud-upload me-1"></i> Kirim Bukti Pembayaran
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <?php endif; ?>
             <?php endif; ?>
 
             <!-- Bukti Bayar Terunggah Preview -->

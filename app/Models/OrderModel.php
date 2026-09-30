@@ -27,9 +27,10 @@ class OrderModel extends Model
 
     public function getOrderWithRelations($id = null, $user_id = null, $unit_id = null)
     {
-        $builder = $this->select('orders.*, users.nama as customer_nama, users.email as customer_email, users.no_hp as customer_phone,
+        $builder = $this->select('orders.*, units.nama_unit, units.slug as unit_slug, users.nama as customer_nama, users.email as customer_email, users.no_hp as customer_phone,
             payments.metode as payment_metode, payments.status as payment_status, payments.bukti_bayar, payments.bank,
             shippings.kurir, shippings.layanan, shippings.no_resi, shippings.status as shipping_status, shippings.alamat_lengkap, shippings.penerima_nama, shippings.penerima_telepon, shippings.kota')
+            ->join('units', 'units.id = orders.unit_id', 'left')
             ->join('users', 'users.id = orders.user_id', 'left')
             ->join('payments', 'payments.order_id = orders.id', 'left')
             ->join('shippings', 'shippings.order_id = orders.id', 'left');

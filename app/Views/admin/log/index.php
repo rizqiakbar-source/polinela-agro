@@ -50,15 +50,15 @@
                                     <span class="text-muted" style="font-size: 0.72rem;"><?= esc($l['user_email'] ?? '-') ?></span>
                                 </td>
                                 <td>
-                                    <span class="badge bg-light text-dark border"><?= esc($l['module']) ?></span>
+                                    <span class="badge bg-light text-dark border"><?= esc($l['modul'] ?? $l['module'] ?? '-') ?></span>
                                 </td>
                                 <td>
                                     <span class="badge bg-success-subtle text-success border border-success-subtle">
-                                        <?= esc($l['action']) ?>
+                                        <?= esc($l['aksi'] ?? $l['action'] ?? '-') ?>
                                     </span>
                                 </td>
                                 <td>
-                                    <span class="small text-secondary"><?= esc($l['description']) ?></span>
+                                    <span class="small text-secondary"><?= esc($l['deskripsi'] ?? $l['description'] ?? '-') ?></span>
                                 </td>
                                 <td class="small font-monospace text-muted">
                                     <?= esc($l['ip_address'] ?? '127.0.0.1') ?>

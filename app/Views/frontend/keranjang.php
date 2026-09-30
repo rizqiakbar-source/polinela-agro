@@ -13,37 +13,53 @@
     <h3 class="fw-extrabold mb-4"><i class="bi bi-cart3 text-success me-2"></i> Keranjang Belanja Anda</h3>
 
     <?php if (!empty($items)): ?>
+    <?php
+    $groupedItems = [];
+    foreach ($items as $item) {
+        $unitName = $item['nama_unit'] ?? 'Unit Usaha Polinela';
+        $groupedItems[$unitName][] = $item;
+    }
+    ?>
     <div class="row g-4">
-        <!-- List Produk di Keranjang -->
+        <!-- List Produk di Keranjang Terkelompok per Unit Toko -->
         <div class="col-lg-8">
-            <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white mb-3">
+            <?php foreach ($groupedItems as $unitName => $unitProducts): ?>
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white mb-4">
+                <div class="card-header bg-success bg-opacity-10 border-0 py-3 px-4 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-shop text-success fs-5"></i>
+                        <strong class="text-dark"><?= esc($unitName) ?></strong>
+                    </div>
+                    <span class="badge bg-white text-success border border-success-subtle rounded-pill px-3 py-1 small">
+                        <?= count($unitProducts) ?> Produk
+                    </span>
+                </div>
                 <div class="table-responsive">
                     <table class="table align-middle mb-0">
                         <thead class="bg-light">
-                            <tr class="small text-muted text-uppercase">
-                                <th class="ps-4">Produk Perkebunan</th>
-                                <th>Harga</th>
+                            <tr class="small text-muted text-uppercase" style="font-size: 0.72rem;">
+                                <th class="ps-4">Produk</th>
+                                <th>Harga Satuan</th>
                                 <th class="text-center">Kuantitas</th>
                                 <th>Subtotal</th>
                                 <th class="text-center pe-4">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($items as $item): ?>
+                            <?php foreach ($unitProducts as $item): ?>
                             <tr id="cart-row-<?= $item['id'] ?>">
                                 <td class="ps-4 py-3">
                                     <div class="d-flex align-items-center gap-3">
-                                        <img src="<?= base_url('assets/img/products/' . ($item['gambar_utama'] ?: 'default-product.png')) ?>" 
+                                        <img src="<?= product_image_url($item['gambar_utama'] ?? '') ?>" 
                                              alt="<?= esc($item['nama_produk']) ?>" 
                                              class="rounded-3 border" 
-                                             style="width: 65px; height: 65px; object-fit: cover;"
+                                             style="width: 60px; height: 60px; object-fit: cover;"
                                              onerror="this.src='https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=200&auto=format&fit=crop&q=80';">
                                         <div>
                                             <a href="<?= base_url('produk/' . $item['slug']) ?>" class="fw-bold text-dark text-decoration-none small d-block mb-1">
                                                 <?= esc($item['nama_produk']) ?>
                                             </a>
-                                            <span class="badge bg-light text-muted border" style="font-size: 0.7rem;"><?= esc($item['nama_unit']) ?></span>
-                                            <span class="text-muted small ms-1" style="font-size: 0.75rem;"><?= $item['berat_gram'] ?>g</span>
+                                            <span class="text-muted small" style="font-size: 0.75rem;"><i class="bi bi-box me-1"></i>Berat: <?= $item['berat_gram'] ?>g</span>
                                         </div>
                                     </div>
                                 </td>
@@ -74,6 +90,7 @@
                     </table>
                 </div>
             </div>
+            <?php endforeach; ?>
             
             <a href="<?= base_url('katalog') ?>" class="text-success fw-bold text-decoration-none small">
                 <i class="bi bi-arrow-left me-1"></i> Lanjut Belanja Produk Lainnya

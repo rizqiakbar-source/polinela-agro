@@ -10,7 +10,10 @@ use App\Libraries\ExcelGenerator;
 
 class Laporan extends BaseController
 {
+    /** @var LaporanModel */
     protected $laporanModel;
+
+    /** @var UnitModel */
     protected $unitModel;
 
     public function __construct()

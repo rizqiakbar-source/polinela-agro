@@ -52,7 +52,7 @@
                             <?php foreach ($products as $p): ?>
                             <tr>
                                 <td>
-                                    <img src="<?= base_url('assets/img/products/' . ($p['gambar_utama'] ?: 'default-product.png')) ?>" 
+                                    <img src="<?= product_image_url($p['gambar_utama'] ?? '') ?>" 
                                          class="rounded-3 border" 
                                          style="width: 48px; height: 48px; object-fit: cover;"
                                          onerror="this.src='https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=120&auto=format&fit=crop&q=80';">

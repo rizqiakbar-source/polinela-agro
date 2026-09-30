@@ -19,10 +19,23 @@ class Notification
         ]);
     }
 
-    public static function sendToAdmins(string $judul, string $pesan, ?string $link = null)
+    public static function sendToAdmins(string $judul, string $pesan, ?string $link = null, ?int $unitId = null)
     {
         $userModel = new \App\Models\UserModel();
-        $admins = $userModel->whereIn('role', ['superadmin', 'admin_unit'])->findAll();
+        
+        $builder = $userModel->groupStart()
+                             ->where('role', 'superadmin')
+                             ->orGroupStart()
+                                ->where('role', 'admin_unit');
+        
+        if ($unitId) {
+            $builder->where('unit_id', $unitId);
+        }
+        
+        $builder->groupEnd()
+                ->groupEnd();
+                
+        $admins = $builder->findAll();
         foreach ($admins as $admin) {
             self::send($admin['id'], $judul, $pesan, $link);
         }

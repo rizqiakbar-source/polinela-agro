@@ -50,9 +50,16 @@ class Pesanan extends BaseController
 
     public function detail($id)
     {
+        $role   = session()->get('user_role');
+        $unitId = session()->get('user_unit_id');
+
         $order = $this->orderModel->find($id);
         if (!$order) {
             return redirect()->to(base_url('admin/pesanan'))->with('error', 'Pesanan tidak ditemukan.');
+        }
+
+        if ($role === 'admin_unit' && ((int) ($order['unit_id'] ?? 0) !== (int) $unitId)) {
+            return redirect()->to(base_url('admin/pesanan'))->with('error', 'Akses ditolak: Pesanan ini berasal dari unit usaha lain.');
         }
 
         $details  = $this->orderDetailModel->getDetailsByOrderId($id);
@@ -74,6 +81,8 @@ class Pesanan extends BaseController
 
     public function updateStatus()
     {
+        $role      = session()->get('user_role');
+        $unitId    = session()->get('user_unit_id');
         $orderId   = (int) $this->request->getPost('order_id');
         $newStatus = $this->request->getPost('status');
         $noResi    = trim($this->request->getPost('no_resi') ?? '');
@@ -81,6 +90,10 @@ class Pesanan extends BaseController
         $order = $this->orderModel->find($orderId);
         if (!$order) {
             return redirect()->back()->with('error', 'Pesanan tidak ditemukan.');
+        }
+
+        if ($role === 'admin_unit' && ((int) ($order['unit_id'] ?? 0) !== (int) $unitId)) {
+            return redirect()->back()->with('error', 'Akses ditolak: Anda hanya dapat mengubah status pesanan unit usaha Anda sendiri.');
         }
 
         $this->orderModel->update($orderId, [
@@ -111,9 +124,16 @@ class Pesanan extends BaseController
 
     public function cetakSuratJalan($id)
     {
+        $role   = session()->get('user_role');
+        $unitId = session()->get('user_unit_id');
+
         $order = $this->orderModel->find($id);
         if (!$order) {
             return redirect()->to(base_url('admin/pesanan'))->with('error', 'Pesanan tidak ditemukan.');
+        }
+
+        if ($role === 'admin_unit' && ((int) ($order['unit_id'] ?? 0) !== (int) $unitId)) {
+            return redirect()->to(base_url('admin/pesanan'))->with('error', 'Akses ditolak: Pesanan ini berasal dari unit usaha lain.');
         }
 
         $details  = $this->orderDetailModel->getDetailsByOrderId($id);

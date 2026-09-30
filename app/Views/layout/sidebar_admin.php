@@ -3,10 +3,22 @@ $role   = session()->get('user_role');
 $unitId = session()->get('user_unit_id');
 $currentUri = uri_string();
 
-// Hitung order pending verifikasi
+// Hitung order pending verifikasi sesuai unit hak akses
 $db = \Config\Database::connect();
-$pendingPaymentCount = $db->table('payments')->where('status', 'pending')->countAllResults();
-$pendingOrderCount   = $db->table('orders')->whereIn('status', ['pending', 'menunggu_verifikasi'])->countAllResults();
+if ($role === 'admin_unit' && $unitId) {
+    $pendingPaymentCount = $db->table('payments')
+                              ->join('orders', 'orders.id = payments.order_id', 'inner')
+                              ->where('orders.unit_id', $unitId)
+                              ->whereIn('payments.status', ['pending', 'menunggu_verifikasi'])
+                              ->countAllResults();
+    $pendingOrderCount   = $db->table('orders')
+                              ->where('unit_id', $unitId)
+                              ->whereIn('status', ['pending', 'menunggu_verifikasi'])
+                              ->countAllResults();
+} else {
+    $pendingPaymentCount = $db->table('payments')->whereIn('status', ['pending', 'menunggu_verifikasi'])->countAllResults();
+    $pendingOrderCount   = $db->table('orders')->whereIn('status', ['pending', 'menunggu_verifikasi'])->countAllResults();
+}
 ?>
 <aside class="admin-sidebar" id="adminSidebar">
     <!-- Brand -->

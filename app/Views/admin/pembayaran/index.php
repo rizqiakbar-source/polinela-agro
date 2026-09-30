@@ -99,7 +99,7 @@
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <strong class="text-dark small"><?= format_rupiah($p['jumlah']) ?></strong>
+                                    <strong class="text-dark small"><?= format_rupiah($p['grand_total'] ?? $p['jumlah'] ?? 0) ?></strong>
                                 </td>
                                 <td>
                                     <?php if (!empty($p['bukti_bayar'])): ?>
@@ -124,7 +124,7 @@
                                                              style="max-height: 450px;"
                                                              onerror="this.src='https://placehold.co/500x700?text=Bukti+Bayar+Tidak+Ditemukan';">
                                                         <div class="small text-muted">
-                                                            Nominal: <strong class="text-dark"><?= format_rupiah($p['jumlah']) ?></strong> | 
+                                                            Nominal: <strong class="text-dark"><?= format_rupiah($p['grand_total'] ?? $p['jumlah'] ?? 0) ?></strong> | 
                                                             Bank: <strong class="text-dark"><?= esc($p['bank'] ?? '-') ?></strong> (a.n <?= esc($p['atas_nama'] ?? '-') ?>)
                                                         </div>
                                                     </div>
@@ -175,7 +175,7 @@
                                                     </div>
                                                     <div class="modal-body">
                                                         <p class="small text-muted mb-3">
-                                                            Pastikan dana sebesar <strong><?= format_rupiah($p['jumlah']) ?></strong> untuk pesanan <strong>#<?= esc($p['order_number']) ?></strong> telah benar-benar masuk ke rekening kampus Polinela.
+                                                            Pastikan dana sebesar <strong><?= format_rupiah($p['grand_total'] ?? $p['jumlah'] ?? 0) ?></strong> untuk pesanan <strong>#<?= esc($p['order_number']) ?></strong> telah benar-benar masuk ke rekening kampus Polinela.
                                                         </p>
                                                         <div class="mb-3">
                                                             <label class="form-label small fw-semibold">Catatan Verifikasi (Opsional)</label>

@@ -19,7 +19,12 @@ desktop.ini
 
 # Environment & Secrets
 .env
-.env.backup
+.env.*
+!.env.example
+*.env
+backend/.env
+backend/.env.*
+!backend/.env.example
 
 # CodeIgniter 4 Writable
 writable/logs/*
@@ -33,11 +38,24 @@ writable/debugbar/*
 !writable/uploads/.gitkeep
 !writable/debugbar/.gitkeep
 
-# Vendor (Composer)
-/vendor/
+# Laravel Backend Writable & Storage
+backend/storage/*.key
+backend/storage/logs/*
+backend/storage/framework/cache/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+backend/bootstrap/cache/*
+!backend/bootstrap/cache/.gitkeep
+!backend/storage/logs/.gitkeep
 
-# Node (jika ada frontend build)
-/node_modules/
+# Vendor (Composer)
+vendor/
+backend/vendor/
+
+# Node & Frontend Build
+node_modules/
+frontend/node_modules/
+frontend/dist/
 package-lock.json
 
 # PHPUnit Cache
@@ -57,10 +75,15 @@ docker-compose.override.yml
 public/uploads/products/*
 public/uploads/payments/*
 public/uploads/avatars/*
+public/uploads/bukti_bayar/*
+public/uploads/produk/*
 !public/uploads/products/.gitkeep
 !public/uploads/payments/.gitkeep
 !public/uploads/avatars/.gitkeep
+!public/uploads/bukti_bayar/.gitkeep
+!public/uploads/produk/.gitkeep
 
 # Compiled Documentation
 docs/*.pdf
 docs/ERD.png
+

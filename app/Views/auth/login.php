@@ -52,10 +52,13 @@
                     <div class="mt-4 p-3 bg-light rounded-3 border">
                         <div class="fw-bold small text-muted mb-2"><i class="bi bi-key-fill text-warning me-1"></i> Akun Pengujian Cepat (Klik untuk Isi):</div>
                         <div class="d-flex flex-wrap gap-1">
-                            <button type="button" class="btn btn-sm btn-outline-success" onclick="fillLogin('admin@polinela.ac.id', 'admin123')">Super Admin</button>
-                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="fillLogin('adminkopi@polinela.ac.id', 'admin123')">Admin Unit Kopi</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="fillLogin('pimpinan@polinela.ac.id', 'pimpinan123')">Pimpinan</button>
-                            <button type="button" class="btn btn-sm btn-outline-warning text-dark" onclick="fillLogin('budi@gmail.com', 'konsumen123')">Konsumen (Civitas)</button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="fillLogin('admin@polinela.ac.id', 'admin123')">👑 Super Admin</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="fillLogin('pimpinan@polinela.ac.id', 'pimpinan123')">📊 Pimpinan</button>
+                            <button type="button" class="btn btn-sm btn-outline-success" onclick="fillLogin('adminkopi@polinela.ac.id', 'admin123')">☕ Admin Kopi</button>
+                            <button type="button" class="btn btn-sm btn-outline-warning text-dark" onclick="fillLogin('adminkakao@polinela.ac.id', 'admin123')">🍫 Admin Kakao</button>
+                            <button type="button" class="btn btn-sm btn-outline-info" onclick="fillLogin('adminlada@polinela.ac.id', 'admin123')">🌿 Admin Lada</button>
+                            <button type="button" class="btn btn-sm btn-outline-dark" onclick="fillLogin('adminatsiri@polinela.ac.id', 'admin123')">🧴 Admin Atsiri</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="fillLogin('budi@gmail.com', 'konsumen123')">🛒 Konsumen</button>
                         </div>
                     </div>
                 </div>

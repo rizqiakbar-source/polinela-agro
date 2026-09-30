@@ -20,13 +20,18 @@ class Pembayaran extends BaseController
 
     public function index()
     {
+        $role   = session()->get('user_role');
+        $unitId = session()->get('user_unit_id');
         $status = $this->request->getGet('status');
-        $payments = $this->paymentModel->getPaymentsWithOrder($status);
+
+        $payments = $this->paymentModel->getPaymentsWithOrder($status, ($role === 'admin_unit') ? $unitId : null);
 
         $data = [
             'title'          => 'Verifikasi Pembayaran - Admin Polinela Agro Digital',
             'payments'       => $payments,
             'current_status' => $status,
+            'role'           => $role,
+            'unit_id'        => $unitId,
         ];
 
         return view('admin/pembayaran/index', $data);
@@ -34,6 +39,8 @@ class Pembayaran extends BaseController
 
     public function verifikasi()
     {
+        $role      = session()->get('user_role');
+        $myUnitId  = session()->get('user_unit_id');
         $paymentId = (int) $this->request->getPost('payment_id');
         $catatan   = trim($this->request->getPost('catatan') ?? '');
 
@@ -43,13 +50,21 @@ class Pembayaran extends BaseController
         }
 
         $order = $this->orderModel->find($payment['order_id']);
+        if (!$order) {
+            return redirect()->back()->with('error', 'Data pesanan tidak ditemukan.');
+        }
+
+        // Validasi hak akses unit: Admin unit hanya boleh memverifikasi pesanan unit usahanya sendiri
+        if ($role === 'admin_unit' && ((int) ($order['unit_id'] ?? 0) !== (int) $myUnitId)) {
+            return redirect()->back()->with('error', 'Akses ditolak: Anda hanya berhak memverifikasi pembayaran pesanan dari unit usaha Anda sendiri.');
+        }
 
         // Update payment status ke lunas
         $this->paymentModel->update($paymentId, [
             'status'      => 'lunas',
             'verified_by' => session()->get('user_id'),
             'verified_at' => date('Y-m-d H:i:s'),
-            'catatan'     => $catatan ?: 'Pembayaran telah diverifikasi sah oleh admin.',
+            'catatan'     => $catatan ?: 'Pembayaran telah diverifikasi sah oleh admin unit.',
             'updated_at'  => date('Y-m-d H:i:s'),
         ]);
 
@@ -73,6 +88,8 @@ class Pembayaran extends BaseController
 
     public function tolak()
     {
+        $role      = session()->get('user_role');
+        $myUnitId  = session()->get('user_unit_id');
         $paymentId = (int) $this->request->getPost('payment_id');
         $catatan   = trim($this->request->getPost('catatan') ?? 'Bukti pembayaran tidak sesuai atau tidak valid.');
 
@@ -82,6 +99,14 @@ class Pembayaran extends BaseController
         }
 
         $order = $this->orderModel->find($payment['order_id']);
+        if (!$order) {
+            return redirect()->back()->with('error', 'Data pesanan tidak ditemukan.');
+        }
+
+        // Validasi hak akses unit: Admin unit hanya boleh menolak pesanan unit usahanya sendiri
+        if ($role === 'admin_unit' && ((int) ($order['unit_id'] ?? 0) !== (int) $myUnitId)) {
+            return redirect()->back()->with('error', 'Akses ditolak: Anda hanya berhak menolak pembayaran pesanan dari unit usaha Anda sendiri.');
+        }
 
         $this->paymentModel->update($paymentId, [
             'status'      => 'ditolak',

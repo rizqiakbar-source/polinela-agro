@@ -75,13 +75,32 @@ class Pesanan extends BaseController
         $settingModel = new SettingModel();
         $bankAccounts = json_decode($settingModel->getByKey('bank_accounts', '[]'), true);
 
+        $unitModel = new \App\Models\UnitModel();
+        $unit = !empty($order['unit_id']) ? $unitModel->find($order['unit_id']) : null;
+
+        // Cek pesanan multi-toko (1x Pembayaran bersama)
+        $siblingOrders = [];
+        $totalTrxAmount = (float) $order['grand_total'];
+        if ($payment && !empty($payment['no_transaksi'])) {
+            $relatedPayments = $this->paymentModel->where('no_transaksi', $payment['no_transaksi'])->findAll();
+            if (count($relatedPayments) > 1) {
+                $siblingOrderIds = array_column($relatedPayments, 'order_id');
+                $allUserOrders = $this->orderModel->getOrderWithRelations(null, $order['user_id']);
+                $siblingOrders = array_values(array_filter($allUserOrders, fn($o) => in_array($o['id'], $siblingOrderIds)));
+                $totalTrxAmount = array_sum(array_column($siblingOrders, 'grand_total'));
+            }
+        }
+
         $data = [
-            'title'         => "Pesanan #{$order['order_number']} - Polinela Agro Digital",
-            'order'         => $order,
-            'details'       => $details,
-            'payment'       => $payment,
-            'shipping'      => $shipping,
-            'bank_accounts' => $bankAccounts,
+            'title'            => "Pesanan #{$order['order_number']} - Polinela Agro Digital",
+            'order'            => $order,
+            'unit'             => $unit,
+            'details'          => $details,
+            'payment'          => $payment,
+            'shipping'         => $shipping,
+            'bank_accounts'    => $bankAccounts,
+            'sibling_orders'   => $siblingOrders,
+            'total_trx_amount' => $totalTrxAmount,
         ];
 
         return view('frontend/detail_pesanan', $data);
@@ -119,21 +138,48 @@ class Pesanan extends BaseController
 
         $file->move($targetDir, $newName);
 
-        // Update pembayaran & status pesanan
-        $this->paymentModel->where('order_id', $orderId)->set([
-            'bukti_bayar' => $newName,
-            'bank'        => $this->request->getPost('bank_asal') ?: 'Transfer Bank',
-            'atas_nama'   => $this->request->getPost('atas_nama_pengirim') ?: 'Pengirim',
-            'updated_at'  => date('Y-m-d H:i:s'),
-        ])->update();
+        // Cek apakah pesanan ini memiliki transaksi bersama (Multi-Toko 1x Bayar)
+        $currentPayment = $this->paymentModel->where('order_id', $orderId)->first();
+        $relatedPayments = [];
+        if ($currentPayment && !empty($currentPayment['no_transaksi'])) {
+            $relatedPayments = $this->paymentModel->where('no_transaksi', $currentPayment['no_transaksi'])->findAll();
+        }
 
-        $this->orderModel->update($orderId, [
-            'status'     => 'menunggu_verifikasi',
-            'updated_at' => date('Y-m-d H:i:s'),
-        ]);
+        if (!empty($relatedPayments)) {
+            foreach ($relatedPayments as $rp) {
+                $this->paymentModel->update($rp['id'], [
+                    'bukti_bayar' => $newName,
+                    'bank'        => $this->request->getPost('bank_asal') ?: 'Transfer Bank',
+                    'atas_nama'   => $this->request->getPost('atas_nama_pengirim') ?: 'Pengirim',
+                    'updated_at'  => date('Y-m-d H:i:s'),
+                ]);
+                $this->orderModel->update($rp['order_id'], [
+                    'status'     => 'menunggu_verifikasi',
+                    'updated_at' => date('Y-m-d H:i:s'),
+                ]);
+                $relOrder = $this->orderModel->find($rp['order_id']);
+                if ($relOrder) {
+                    Notification::sendToAdmins('Bukti Pembayaran Diunggah', "Konsumen telah mengunggah bukti bayar untuk pesanan #{$relOrder['order_number']}.", base_url('admin/pembayaran'), $relOrder['unit_id'] ? (int) $relOrder['unit_id'] : null);
+                    log_system_activity('Upload Bukti', 'Pembayaran', "Upload bukti bayar untuk pesanan #{$relOrder['order_number']}");
+                }
+            }
+        } else {
+            // Update pembayaran & status pesanan tunggal
+            $this->paymentModel->where('order_id', $orderId)->set([
+                'bukti_bayar' => $newName,
+                'bank'        => $this->request->getPost('bank_asal') ?: 'Transfer Bank',
+                'atas_nama'   => $this->request->getPost('atas_nama_pengirim') ?: 'Pengirim',
+                'updated_at'  => date('Y-m-d H:i:s'),
+            ])->update();
 
-        Notification::sendToAdmins('Bukti Pembayaran Diunggah', "Konsumen telah mengunggah bukti bayar untuk pesanan #{$order['order_number']}.", base_url('admin/pembayaran'));
-        log_system_activity('Upload Bukti', 'Pembayaran', "Upload bukti bayar untuk pesanan #{$order['order_number']}");
+            $this->orderModel->update($orderId, [
+                'status'     => 'menunggu_verifikasi',
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+
+            Notification::sendToAdmins('Bukti Pembayaran Diunggah', "Konsumen telah mengunggah bukti bayar untuk pesanan #{$order['order_number']}.", base_url('admin/pembayaran'), $order['unit_id'] ? (int) $order['unit_id'] : null);
+            log_system_activity('Upload Bukti', 'Pembayaran', "Upload bukti bayar untuk pesanan #{$order['order_number']}");
+        }
 
         return redirect()->back()->with('success', 'Bukti pembayaran berhasil diunggah! Mohon menunggu verifikasi dari Admin Unit.');
     }
@@ -185,8 +231,8 @@ class Pesanan extends BaseController
         $stockModel = new StockModel();
 
         foreach ($details as $d) {
-            $produkModel->where('id', $d['product_id'])->increment('stok', $d['qty']);
-            $produkModel->where('id', $d['product_id'])->decrement('total_terjual', $d['qty']);
+            $produkModel->where('id', $d['product_id'])->increment('stok', (int) $d['qty']);
+            $produkModel->where('id', $d['product_id'])->decrement('total_terjual', (int) $d['qty']);
 
             $p = $produkModel->find($d['product_id']);
             $stockModel->insert([
@@ -217,14 +263,17 @@ class Pesanan extends BaseController
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Invoice tidak ditemukan.');
         }
 
-        $details  = $this->orderDetailModel->getDetailsByOrderId($order['id']);
-        $payment  = $this->paymentModel->where('order_id', $order['id'])->first();
-        $shipping = $this->shippingModel->where('order_id', $order['id'])->first();
-        $customer = (new \App\Models\UserModel())->find($order['user_id']);
+        $details   = $this->orderDetailModel->getDetailsByOrderId($order['id']);
+        $payment   = $this->paymentModel->where('order_id', $order['id'])->first();
+        $shipping  = $this->shippingModel->where('order_id', $order['id'])->first();
+        $customer  = (new \App\Models\UserModel())->find($order['user_id']);
+        $unitModel = new \App\Models\UnitModel();
+        $unit      = !empty($order['unit_id']) ? $unitModel->find($order['unit_id']) : null;
 
         $data = [
             'title'    => "Invoice #{$order['order_number']} - Polinela Agro Digital",
             'order'    => $order,
+            'unit'     => $unit,
             'details'  => $details,
             'payment'  => $payment,
             'shipping' => $shipping,
@@ -241,13 +290,16 @@ class Pesanan extends BaseController
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Invoice tidak ditemukan.');
         }
 
-        $details  = $this->orderDetailModel->getDetailsByOrderId($order['id']);
-        $payment  = $this->paymentModel->where('order_id', $order['id'])->first();
-        $shipping = $this->shippingModel->where('order_id', $order['id'])->first();
-        $customer = (new \App\Models\UserModel())->find($order['user_id']);
+        $details   = $this->orderDetailModel->getDetailsByOrderId($order['id']);
+        $payment   = $this->paymentModel->where('order_id', $order['id'])->first();
+        $shipping  = $this->shippingModel->where('order_id', $order['id'])->first();
+        $customer  = (new \App\Models\UserModel())->find($order['user_id']);
+        $unitModel = new \App\Models\UnitModel();
+        $unit      = !empty($order['unit_id']) ? $unitModel->find($order['unit_id']) : null;
 
         $data = [
             'order'    => $order,
+            'unit'     => $unit,
             'details'  => $details,
             'payment'  => $payment,
             'shipping' => $shipping,

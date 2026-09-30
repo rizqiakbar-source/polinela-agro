@@ -118,8 +118,8 @@
         <tr>
             <td>
                 <div class="logo-text">POLINELA AGRO DIGITAL</div>
-                <div class="logo-sub">Politeknik Negeri Lampung - Teaching Factory Perkebunan</div>
-                <div class="logo-sub">Jl. Soekarno Hatta No. 10, Rajabasa, Bandar Lampung 35144</div>
+                <div class="logo-sub" style="font-weight: bold; color: #1e4d2b;"><?= esc($unit['nama_unit'] ?? 'Teaching Factory Perkebunan') ?></div>
+                <div class="logo-sub">Politeknik Negeri Lampung • Jl. Soekarno Hatta No. 10, Rajabasa, Bandar Lampung</div>
             </td>
             <td class="invoice-title">
                 INVOICE
@@ -140,10 +140,10 @@
         <td style="padding-right: 10px;">
             <div class="box">
                 <div class="box-title">Diterbitkan Kepada:</div>
-                <strong><?= esc($shipping['nama_penerima'] ?? $customer['nama'] ?? 'Pelanggan') ?></strong><br>
-                Telp: <?= esc($shipping['no_hp'] ?? $customer['no_hp'] ?? '-') ?><br>
+                <strong><?= esc($shipping['penerima_nama'] ?? $shipping['nama_penerima'] ?? $customer['nama'] ?? 'Pelanggan') ?></strong><br>
+                Telp: <?= esc($shipping['penerima_telepon'] ?? $shipping['no_hp'] ?? $customer['no_hp'] ?? '-') ?><br>
                 Email: <?= esc($customer['email'] ?? '-') ?><br>
-                Alamat Kirim: <?= esc($shipping['alamat'] ?? '-') ?>, <?= esc($shipping['kota'] ?? 'Bandar Lampung') ?>
+                Alamat Kirim: <?= esc($shipping['alamat_lengkap'] ?? $shipping['alamat'] ?? '-') ?>, <?= esc($shipping['kota'] ?? 'Bandar Lampung') ?>
             </div>
         </td>
         <td style="padding-left: 10px;">

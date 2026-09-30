@@ -20,15 +20,20 @@ class PaymentModel extends Model
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
 
-    public function getPaymentsWithOrder($status = null)
+    public function getPaymentsWithOrder($status = null, $unitId = null)
     {
-        $builder = $this->select('payments.*, orders.order_number, orders.grand_total, users.nama as customer_nama, users.email as customer_email, verifier.nama as verifier_nama')
+        $builder = $this->select('payments.*, orders.order_number, orders.unit_id, orders.grand_total, orders.grand_total as jumlah, units.nama_unit, users.nama as customer_nama, users.email as customer_email, verifier.nama as verifier_nama')
                         ->join('orders', 'orders.id = payments.order_id', 'left')
+                        ->join('units', 'units.id = orders.unit_id', 'left')
                         ->join('users', 'users.id = orders.user_id', 'left')
                         ->join('users as verifier', 'verifier.id = payments.verified_by', 'left');
 
         if ($status) {
             $builder->where('payments.status', $status);
+        }
+
+        if ($unitId) {
+            $builder->where('orders.unit_id', $unitId);
         }
 
         return $builder->orderBy('payments.id', 'DESC')->findAll();

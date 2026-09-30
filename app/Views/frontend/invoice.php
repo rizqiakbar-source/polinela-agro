@@ -45,7 +45,7 @@
                 </div>
                 <div>
                     <h5 class="fw-bold mb-0 text-success" style="letter-spacing: -0.5px;">POLINELA AGRO DIGITAL</h5>
-                    <div class="small fw-semibold text-muted">Teaching Factory & Unit Usaha Perkebunan</div>
+                    <div class="small fw-bold text-dark"><?= esc($unit['nama_unit'] ?? 'Teaching Factory & Unit Usaha Perkebunan') ?></div>
                     <div class="small text-secondary" style="font-size: 0.78rem;">Politeknik Negeri Lampung • Jl. Soekarno Hatta No. 10, Rajabasa, Bandar Lampung</div>
                 </div>
             </div>
@@ -61,10 +61,10 @@
         <div class="row g-4 mb-4">
             <div class="col-sm-6">
                 <span class="text-muted small d-block">Tujuan Penagihan & Pengiriman:</span>
-                <strong class="text-dark fs-6"><?= esc($shipping['penerima_nama'] ?? $customer['nama']) ?></strong>
+                <strong class="text-dark fs-6"><?= esc($shipping['penerima_nama'] ?? $customer['nama'] ?? 'Pelanggan') ?></strong>
                 <div class="small text-secondary mt-1">
-                    <i class="bi bi-telephone me-1"></i> <?= esc($shipping['penerima_telepon'] ?? $customer['no_hp']) ?><br>
-                    <i class="bi bi-envelope me-1"></i> <?= esc($customer['email']) ?><br>
+                    <i class="bi bi-telephone me-1"></i> <?= esc($shipping['penerima_telepon'] ?? $customer['no_hp'] ?? '-') ?><br>
+                    <i class="bi bi-envelope me-1"></i> <?= esc($customer['email'] ?? '-') ?><br>
                     <i class="bi bi-geo-alt me-1"></i> <?= esc($shipping['alamat_lengkap'] ?? '-') ?>, <?= esc($shipping['kota'] ?? '') ?>
                 </div>
             </div>
@@ -76,8 +76,8 @@
                 <span class="badge bg-light text-dark border text-uppercase font-monospace"><?= esc($payment['metode'] ?? 'Transfer Manual') ?></span>
 
                 <div class="small text-muted mt-2">Status Pembayaran:</div>
-                <strong class="<?= ($payment['status'] === 'lunas') ? 'text-success' : 'text-warning' ?> text-uppercase">
-                    <?= ($payment['status'] === 'lunas') ? 'LUNAS / TERVERIFIKASI' : 'MENUNGGU VERIFIKASI' ?>
+                <strong class="<?= (($payment['status'] ?? '') === 'lunas') ? 'text-success' : 'text-warning' ?> text-uppercase">
+                    <?= (($payment['status'] ?? '') === 'lunas') ? 'LUNAS / TERVERIFIKASI' : 'MENUNGGU VERIFIKASI' ?>
                 </strong>
             </div>
         </div>

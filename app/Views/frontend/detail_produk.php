@@ -18,22 +18,22 @@
             <div class="col-lg-5">
                 <div class="position-relative rounded-4 overflow-hidden border mb-3" style="padding-top: 85%; background: #f8fafc;">
                     <img id="mainProductImg" 
-                         src="<?= base_url('assets/img/products/' . ($product['gambar_utama'] ?: 'default-product.png')) ?>" 
+                         src="<?= product_image_url($product['gambar_utama'] ?? '') ?>" 
                          alt="<?= esc($product['nama_produk']) ?>" 
                          class="position-absolute top-0 start-0 w-100 h-100 object-fit-cover"
-                         onerror="this.src='https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800&auto=format&fit=crop&q=80';">
+                         onerror="this.onerror=null; this.src='https://placehold.co/800x800/1b5e20/ffffff?text=Polinela+Agro';">
                 </div>
 
                 <!-- Thumbnail Switcher -->
                 <div class="d-flex gap-2 overflow-auto pb-2">
-                    <img src="<?= base_url('assets/img/products/' . ($product['gambar_utama'] ?: 'default-product.png')) ?>" 
+                    <img src="<?= product_image_url($product['gambar_utama'] ?? '') ?>" 
                          class="rounded-3 border border-2 border-success p-1 thumbnail-selector cursor-pointer" 
                          style="width: 65px; height: 65px; object-fit: cover;" 
                          onclick="document.getElementById('mainProductImg').src=this.src;"
-                         onerror="this.src='https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=200&auto=format&fit=crop&q=80';">
+                         onerror="this.onerror=null; this.src='https://placehold.co/200x200/1b5e20/ffffff?text=Polinela';">
                     <?php if (!empty($images)): ?>
                         <?php foreach ($images as $img): ?>
-                        <img src="<?= base_url('assets/img/products/' . $img['image_url']) ?>" 
+                        <img src="<?= product_image_url($img['image_url']) ?>" 
                              class="rounded-3 border p-1 thumbnail-selector cursor-pointer" 
                              style="width: 65px; height: 65px; object-fit: cover;" 
                              onclick="document.getElementById('mainProductImg').src=this.src;">

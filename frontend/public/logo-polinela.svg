@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <linearGradient id="polinelaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1b4332" />
+      <stop offset="50%" stop-color="#2d6a4f" />
+      <stop offset="100%" stop-color="#40916c" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffd166" />
+      <stop offset="100%" stop-color="#f39c12" />
+    </linearGradient>
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1d3557" />
+      <stop offset="100%" stop-color="#457b9d" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.15" />
+    </filter>
+  </defs>
+
+  <!-- Outer Ring with Golden Border -->
+  <circle cx="100" cy="100" r="94" fill="#ffffff" stroke="url(#goldGrad)" stroke-width="5" filter="url(#shadow)"/>
+  
+  <!-- Outer Decorative Pentagon Petals (Polinela Symbol) -->
+  <polygon points="100,12 124,30 152,18 164,46 192,50 188,80 208,98 188,118 194,148 164,152 154,180 126,170 100,188 74,170 46,180 36,152 6,148 12,118 -8,98 12,80 8,50 36,46 48,18 76,30" 
+           fill="none" stroke="url(#polinelaGrad)" stroke-width="2" opacity="0.4" transform="scale(0.88) translate(14,14)"/>
+
+  <!-- Inner Blue Ring -->
+  <circle cx="100" cy="100" r="82" fill="url(#blueGrad)" />
+
+  <!-- Text Arc Area (POLITEKNIK NEGERI LAMPUNG) -->
+  <circle cx="100" cy="100" r="72" fill="#ffffff" />
+
+  <!-- Siger & Agro Center Shield -->
+  <path d="M 60,70 Q 100,50 140,70 L 135,120 Q 100,145 65,120 Z" fill="url(#polinelaGrad)" stroke="url(#goldGrad)" stroke-width="2"/>
+
+  <!-- Lampung Siger Crown Motif -->
+  <path d="M 70,82 L 78,68 L 86,76 L 100,60 L 114,76 L 122,68 L 130,82 Q 100,88 70,82 Z" fill="url(#goldGrad)"/>
+  
+  <!-- Plant Leaf / Agro Symbol -->
+  <path d="M 100,125 C 85,110 85,90 100,85 C 115,90 115,110 100,125 Z" fill="#ffffff"/>
+  <path d="M 100,85 L 100,125" stroke="#2d6a4f" stroke-width="1.5"/>
+  <path d="M 94,98 Q 100,95 106,98" stroke="#2d6a4f" stroke-width="1.2" fill="none"/>
+  <path d="M 92,108 Q 100,105 108,108" stroke="#2d6a4f" stroke-width="1.2" fill="none"/>
+
+  <!-- Golden Stars -->
+  <polygon points="100,38 103,45 110,45 105,49 107,56 100,52 93,56 95,49 90,45 97,45" fill="url(#goldGrad)"/>
+
+  <!-- Golden Text Ring Header -->
+  <text font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="8.5" font-weight="900" fill="#1d3557" text-anchor="middle" letter-spacing="1.2">
+    <textPath href="#textPathTop" startOffset="50%">POLITEKNIK NEGERI LAMPUNG</textPath>
+  </text>
+  <text font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="8" font-weight="800" fill="#2d6a4f" text-anchor="middle" letter-spacing="1.5">
+    <textPath href="#textPathBottom" startOffset="50%">• POLINELA AGRO •</textPath>
+  </text>
+
+  <path id="textPathTop" d="M 30,100 A 70,70 0 0,1 170,100" fill="none"/>
+  <path id="textPathBottom" d="M 170,100 A 70,70 0 0,1 30,100" fill="none"/>
+</svg>

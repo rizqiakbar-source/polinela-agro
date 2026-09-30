@@ -152,16 +152,35 @@
                 <div class="card border-0 shadow-sm rounded-4 p-4 bg-white sticky-top" style="top: 100px;">
                     <h5 class="fw-bold mb-3">Ringkasan Pembayaran</h5>
 
-                    <!-- Item Ringkas -->
+                    <!-- Item Ringkas Terkelompok Unit -->
                     <div class="mb-3 d-flex flex-column gap-2 border-bottom pb-3">
-                        <?php foreach ($items as $it): ?>
-                        <div class="d-flex justify-content-between align-items-center small">
-                            <span class="text-truncate" style="max-width: 190px;">
-                                <?= esc($it['nama_produk']) ?> <span class="text-muted">x<?= $it['qty'] ?></span>
-                            </span>
-                            <strong class="text-dark"><?= format_rupiah($it['harga'] * $it['qty']) ?></strong>
+                        <?php
+                        $checkoutGroups = [];
+                        foreach ($items as $it) {
+                            $uName = $it['nama_unit'] ?? 'Unit Usaha Polinela';
+                            $checkoutGroups[$uName][] = $it;
+                        }
+                        ?>
+                        <?php foreach ($checkoutGroups as $uName => $gItems): ?>
+                        <div class="bg-light p-2 rounded-3 border">
+                            <div class="small fw-bold text-success mb-1 d-flex align-items-center gap-1">
+                                <i class="bi bi-shop"></i> <?= esc($uName) ?>
+                            </div>
+                            <?php foreach ($gItems as $it): ?>
+                            <div class="d-flex justify-content-between align-items-center small py-1">
+                                <span class="text-truncate text-muted" style="max-width: 170px;">
+                                    <?= esc($it['nama_produk']) ?> <strong class="text-dark">x<?= $it['qty'] ?></strong>
+                                </span>
+                                <strong class="text-dark"><?= format_rupiah($it['harga'] * $it['qty']) ?></strong>
+                            </div>
+                            <?php endforeach; ?>
                         </div>
                         <?php endforeach; ?>
+                        <?php if (count($checkoutGroups) > 1): ?>
+                        <div class="p-2 rounded-3 bg-warning-subtle text-warning-emphasis small" style="font-size: 0.72rem;">
+                            <i class="bi bi-info-circle me-1"></i> Pesanan mencakup produk dari <strong><?= count($checkoutGroups) ?> unit toko berbeda</strong> dan akan diproses secara paralel oleh masing-masing unit.
+                        </div>
+                        <?php endif; ?>
                     </div>
 
                     <!-- Input Voucher Promo -->
@@ -252,6 +271,7 @@ function applyVoucher() {
     const formData = new FormData();
     formData.append('code', code);
     formData.append('subtotal', currentSubtotal);
+    formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
 
     fetch(window.BASE_URL + 'checkout/voucher', {
         method: 'POST',

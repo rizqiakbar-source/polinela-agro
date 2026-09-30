@@ -33,8 +33,11 @@
             <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 border-bottom pb-3 mb-3">
                     <div>
-                        <div class="d-flex align-items-center gap-2">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
                             <h6 class="fw-extrabold text-dark mb-0">#<?= esc($o['order_number']) ?></h6>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle small py-1 px-2">
+                                <i class="bi bi-shop me-1"></i><?= esc($o['nama_unit'] ?? 'Unit Polinela') ?>
+                            </span>
                             <?= status_badge($o['status']) ?>
                         </div>
                         <small class="text-muted"><i class="bi bi-calendar3 me-1"></i> <?= format_tanggal($o['created_at']) ?></small>

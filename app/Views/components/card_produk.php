@@ -8,10 +8,11 @@
                 <i class="bi bi-heart"></i>
             </button>
             <a href="<?= base_url('produk/' . $product['slug']) ?>">
-                <img src="<?= base_url('assets/img/products/' . ($product['gambar_utama'] ?: 'default-product.png')) ?>" 
+                <img src="<?= product_image_url($product['gambar_utama'] ?? '') ?>" 
                      alt="<?= esc($product['nama_produk']) ?>" 
                      class="product-img"
-                     onerror="this.src='https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80';">
+                     loading="lazy"
+                     onerror="this.onerror=null; this.src='https://placehold.co/600x600/1b5e20/ffffff?text=Polinela+Agro';">
             </a>
         </div>
         <div class="product-body">

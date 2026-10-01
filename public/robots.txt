@@ -1,8 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /admin/
-Disallow: /checkout/
-Disallow: /keranjang/
-Disallow: /profil/
-
-Sitemap: http://localhost/polinela-agro/public/sitemap.xml

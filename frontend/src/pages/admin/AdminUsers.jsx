@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import client from '../../api/client';
 import { formatDate } from '../../utils/format';
-import { Plus, Edit2, Trash2, Search, UserCheck, Shield } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, UserCheck, Shield, Store } from 'lucide-react';
 import Swal from 'sweetalert2';
 
 const AdminUsers = () => {
@@ -217,7 +217,10 @@ const AdminUsers = () => {
                                         </td>
                                         <td>
                                             {u.unit ? (
-                                                <span className="badge bg-success">🏪 {u.unit.nama_unit}</span>
+                                                <span className="badge bg-success d-inline-flex align-items-center gap-1">
+                                                    <Store size={12} />
+                                                    <span>{u.unit.nama_unit}</span>
+                                                </span>
                                             ) : (
                                                 <span className="text-muted">-</span>
                                             )}

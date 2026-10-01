@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import client from '../../api/client';
 import Swal from 'sweetalert2';
-import { Truck, Plus, Trash2, Save, RefreshCw, MapPin, Clock, DollarSign } from 'lucide-react';
+import { Truck, Plus, Trash2, Save, RefreshCw, MapPin, Clock, DollarSign, Info } from 'lucide-react';
 import { formatRupiah } from '../../utils/format';
 
 const AdminOngkir = () => {
@@ -211,8 +211,8 @@ const AdminOngkir = () => {
                         </div>
                         
                         <div className="p-3 border-top d-flex justify-content-between align-items-center" style={{ background: 'var(--bg-card-hover)', borderColor: 'var(--border-color)' }}>
-                            <small className="text-muted">
-                                💡 <em>Tarif Rp 0 otomatis diberi label "Gratis Ongkir" di halaman keranjang & checkout pelanggan.</em>
+                            <small className="text-muted d-flex align-items-center gap-1.5">
+                                <Info size={14} className="text-primary flex-shrink-0" /> <em>Tarif Rp 0 otomatis diberi label "Gratis Ongkir" di halaman keranjang & checkout pelanggan.</em>
                             </small>
                             <button
                                 type="submit"

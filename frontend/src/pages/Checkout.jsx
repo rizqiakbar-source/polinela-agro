@@ -4,7 +4,7 @@ import client from '../api/client';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { formatRupiah, getImageUrl } from '../utils/format';
-import { Store, CreditCard, Truck, Tag, ShieldCheck, ArrowLeft, CheckCircle2, MapPin, Compass, Zap } from 'lucide-react';
+import { Store, CreditCard, Truck, Tag, ShieldCheck, ArrowLeft, CheckCircle2, MapPin, Compass, Zap, Package, ShoppingBag, ShoppingCart, Sparkles } from 'lucide-react';
 import Swal from 'sweetalert2';
 import LocationPickerModal from '../components/LocationPickerModal';
 import { triggerMidtransPayment } from '../utils/midtrans';
@@ -138,7 +138,7 @@ const Checkout = () => {
                             } catch (e) {}
                             Swal.fire({
                                 icon: 'success',
-                                title: 'Pembayaran Berhasil! 🎉',
+                                title: 'Pembayaran Berhasil!',
                                 text: 'Pesanan Anda otomatis diverifikasi LUNAS & notifikasi telah dikirim.',
                                 timer: 2000,
                                 showConfirmButton: false,
@@ -208,17 +208,19 @@ const Checkout = () => {
                     </div>
                 ) : cartGroups.length === 0 ? (
                     <div className="card border-0 shadow-sm rounded-4 p-5 text-center bg-white my-4">
-                        <div className="fs-1 mb-3">🛍️</div>
+                        <div className="mb-3 d-flex justify-content-center">
+                            <ShoppingBag size={56} className="text-success opacity-75" />
+                        </div>
                         <h4 className="fw-bold mb-2">Keranjang Belanja Kosong</h4>
                         <p className="text-muted small mb-4">
                             Pesanan Anda sebelumnya telah berhasil dibuat, atau belum ada produk di keranjang belanja.
                         </p>
                         <div className="d-flex justify-content-center gap-3 flex-wrap">
-                            <Link to="/pesanan" className="btn btn-success rounded-pill px-4 fw-semibold shadow-sm">
-                                📦 Lihat Pesanan Saya
+                            <Link to="/pesanan" className="btn btn-success rounded-pill px-4 fw-semibold shadow-sm d-inline-flex align-items-center gap-2">
+                                <Package size={16} /> Lihat Pesanan Saya
                             </Link>
-                            <Link to="/katalog" className="btn btn-outline-secondary rounded-pill px-4 fw-semibold">
-                                🛒 Belanja Produk Baru
+                            <Link to="/katalog" className="btn btn-outline-secondary rounded-pill px-4 fw-semibold d-inline-flex align-items-center gap-2">
+                                <ShoppingCart size={16} /> Belanja Produk Baru
                             </Link>
                         </div>
                     </div>
@@ -270,9 +272,9 @@ const Checkout = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => setShowMapModal(true)}
-                                                className="btn btn-link text-success p-0 small text-decoration-none fw-semibold"
+                                                className="btn btn-link text-success p-0 small text-decoration-none fw-semibold d-inline-flex align-items-center gap-1"
                                             >
-                                                📍 Cari di Peta
+                                                <MapPin size={13} /> Cari di Peta
                                             </button>
                                         </div>
                                         <textarea
@@ -375,8 +377,9 @@ const Checkout = () => {
                                     {cartGroups.map((group) => (
                                         <div key={group.unit_id} className="border rounded-3 p-3 bg-light bg-opacity-50">
                                             <div className="d-flex align-items-center justify-content-between border-bottom pb-2 mb-2">
-                                                <div className="fw-bold text-success d-flex align-items-center gap-1">
-                                                    <span>🏪 {group.unit_name}</span>
+                                                <div className="fw-bold text-success d-flex align-items-center gap-2">
+                                                    <Store size={15} />
+                                                    <span>{group.unit_name}</span>
                                                 </div>
                                                 <span className="badge bg-secondary bg-opacity-25 text-dark small">Sub-Order Terpisah</span>
                                             </div>
@@ -421,7 +424,7 @@ const Checkout = () => {
                                 </div>
                                 {appliedVoucher && (
                                     <div className="p-2 bg-success bg-opacity-10 text-success rounded-3 small d-flex align-items-center justify-content-between">
-                                        <span>🎉 Voucher: <strong>{appliedVoucher.kode_voucher}</strong></span>
+                                        <span className="d-inline-flex align-items-center gap-1"><Sparkles size={14} /> Voucher: <strong>{appliedVoucher.kode_voucher}</strong></span>
                                         <span className="fw-bold">-{formatRupiah(voucherDiscount)}</span>
                                     </div>
                                 )}

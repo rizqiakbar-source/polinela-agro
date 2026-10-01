@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { formatRupiah, getImageUrl } from '../utils/format';
-import { Trash2, Plus, Minus, Store, ShoppingBag, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Trash2, Plus, Minus, Store, ShoppingBag, ArrowRight, ShieldCheck, ShoppingCart } from 'lucide-react';
 import Swal from 'sweetalert2';
 
 const Keranjang = () => {
@@ -46,7 +46,9 @@ const Keranjang = () => {
 
                 {isEmpty ? (
                     <div className="card border-0 shadow-sm rounded-4 p-5 text-center bg-white">
-                        <div className="fs-1 mb-3">🛒</div>
+                        <div className="mb-3 d-flex justify-content-center">
+                            <ShoppingCart size={56} className="text-success opacity-75" />
+                        </div>
                         <h4 className="fw-bold mb-2">Keranjang Belanja Masih Kosong</h4>
                         <p className="text-muted small mb-4">Ayo jelajahi produk kopi, kakao, bibit, dan hasil perkebunan Polinela lainnya!</p>
                         <Link to="/katalog" className="btn btn-success rounded-pill px-4 mx-auto d-inline-flex align-items-center gap-2">

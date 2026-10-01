@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Printer, X, ShieldCheck, MapPin, Phone, Mail, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Printer, X, ShieldCheck, MapPin, Phone, Mail, CheckCircle2, AlertCircle, Info } from 'lucide-react';
 import { formatRupiah, formatDate } from '../utils/format';
 
 const ReceiptModal = ({ isOpen, onClose, order }) => {
@@ -240,8 +240,8 @@ const ReceiptModal = ({ isOpen, onClose, order }) => {
 
                 {/* Modal Footer Controls (Hidden on print) */}
                 <div className="no-print d-flex justify-content-between align-items-center px-4 py-3 border-top bg-light">
-                    <small className="text-muted">
-                        💡 Tips: Pilih <em>"Save as PDF"</em> pada jendela cetak browser untuk mengunduh berkas PDF.
+                    <small className="text-muted d-flex align-items-center gap-1">
+                        <Info size={14} className="text-primary flex-shrink-0" /> Tips: Pilih <em>"Save as PDF"</em> pada jendela cetak browser untuk mengunduh berkas PDF.
                     </small>
                     <div className="d-flex gap-2">
                         <button type="button" onClick={onClose} className="btn btn-outline-secondary btn-sm rounded-pill px-3">

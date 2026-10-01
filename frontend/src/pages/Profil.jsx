@@ -10,14 +10,14 @@ import {
     Building2, Sun, Moon, CheckCircle2, AlertCircle, Copy, 
     Eye, EyeOff, Crop, RefreshCw, Calendar, Sparkles, KeyRound,
     HelpCircle, ExternalLink, Activity, Info, Palette, Check, X,
-    Layers, Compass, Flame, Droplets, MoonStar, Zap
+    Layers, Compass, Flame, Droplets, MoonStar, Zap, Sprout
 } from 'lucide-react';
 
 const BANNER_CATEGORIES = [
     {
         id: 'agro',
         name: 'Perkebunan & Alam',
-        icon: '🌿',
+        icon: Sprout,
         presets: [
             { id: 'emerald', name: 'Hijau Polinela Agro', value: 'linear-gradient(135deg, #166534 0%, #15803d 50%, #047857 100%)' },
             { id: 'forest', name: 'Hutan Pinus Riset', value: 'linear-gradient(135deg, #064e3b 0%, #047857 50%, #059669 100%)' },
@@ -30,7 +30,7 @@ const BANNER_CATEGORIES = [
     {
         id: 'ocean',
         name: 'Samudra & Langit',
-        icon: '🌊',
+        icon: Droplets,
         presets: [
             { id: 'sapphire', name: 'Deep Ocean Sapphire', value: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #06b6d4 100%)' },
             { id: 'pacific', name: 'Pacific Cyan Wave', value: 'linear-gradient(135deg, #0e7490 0%, #06b6d4 50%, #38bdf8 100%)' },
@@ -42,7 +42,7 @@ const BANNER_CATEGORIES = [
     {
         id: 'sunset',
         name: 'Senja & Kehangatan',
-        icon: '🌅',
+        icon: Flame,
         presets: [
             { id: 'sunset', name: 'Senja Tropis Lampung', value: 'linear-gradient(135deg, #9a3412 0%, #ea580c 50%, #f59e0b 100%)' },
             { id: 'flame', name: 'Crimson Ember Flame', value: 'linear-gradient(135deg, #881337 0%, #e11d48 50%, #f43f5e 100%)' },
@@ -54,7 +54,7 @@ const BANNER_CATEGORIES = [
     {
         id: 'cyber',
         name: 'Cyber & Aurora',
-        icon: '🔮',
+        icon: Sparkles,
         presets: [
             { id: 'aurora', name: 'Aurora Borealis Glow', value: 'linear-gradient(135deg, #064e3b 0%, #0284c7 50%, #9333ea 100%)' },
             { id: 'royal', name: 'Royal Amethyst Ungu', value: 'linear-gradient(135deg, #4c1d95 0%, #7c3aed 50%, #c084fc 100%)' },
@@ -66,7 +66,7 @@ const BANNER_CATEGORIES = [
     {
         id: 'stealth',
         name: 'Monokrom & Elegan',
-        icon: '🌑',
+        icon: MoonStar,
         presets: [
             { id: 'midnight', name: 'Midnight Carbon Slate', value: 'linear-gradient(135deg, #090d16 0%, #1e293b 50%, #334155 100%)' },
             { id: 'titanium', name: 'Titanium Metallic Gray', value: 'linear-gradient(135deg, #18181b 0%, #3f3f46 50%, #71717a 100%)' },
@@ -238,7 +238,7 @@ const Profil = () => {
             });
 
             if (res.data.status === 'success' || res.data.success) {
-                const titleText = passwordBaru ? 'Kata Sandi & Profil Berhasil Diperbarui! 🎉' : 'Profil Berhasil Diperbarui! 🎉';
+                const titleText = passwordBaru ? 'Kata Sandi & Profil Berhasil Diperbarui!' : 'Profil Berhasil Diperbarui!';
                 const descText = passwordBaru 
                     ? 'Kata sandi baru telah aktif di database. Gunakan kata sandi baru ini saat login ke sistem.' 
                     : 'Seluruh data profil dan preferensi akun Anda telah disimpan.';
@@ -290,10 +290,10 @@ const Profil = () => {
 
     const getRoleBadge = (role) => {
         switch(role) {
-            case 'superadmin': return { label: 'Super Administrator', color: '#ef4444', bg: 'rgba(239,68,68,0.12)', icon: '👑' };
-            case 'admin_unit': return { label: 'Admin Unit Usaha', color: '#3b82f6', bg: 'rgba(59,130,246,0.12)', icon: '🏢' };
-            case 'pimpinan': return { label: 'Pimpinan / Eksekutif', color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)', icon: '🏛️' };
-            default: return { label: 'Pelanggan Terverifikasi', color: '#22c55e', bg: 'rgba(34,197,94,0.12)', icon: '🌱' };
+            case 'superadmin': return { label: 'Super Administrator', color: '#ef4444', bg: 'rgba(239,68,68,0.12)', icon: Shield };
+            case 'admin_unit': return { label: 'Admin Unit Usaha', color: '#3b82f6', bg: 'rgba(59,130,246,0.12)', icon: Building2 };
+            case 'pimpinan': return { label: 'Pimpinan / Eksekutif', color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)', icon: Layers };
+            default: return { label: 'Pelanggan Terverifikasi', color: '#22c55e', bg: 'rgba(34,197,94,0.12)', icon: Sprout };
         }
     };
 
@@ -335,8 +335,8 @@ const Profil = () => {
                         }}
                     >
                         <div className="d-flex justify-content-between align-items-start">
-                            <span className="small fw-semibold text-white d-flex align-items-center gap-1" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
-                                🌿 Profil Resmi • Polinela Agro Digital
+                            <span className="small fw-semibold text-white d-flex align-items-center gap-1.5" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
+                                <Sprout size={15} /> Profil Resmi • Polinela Agro Digital
                             </span>
 
                             <span className="small text-white-50 d-none d-sm-inline-flex align-items-center gap-1" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
@@ -821,8 +821,8 @@ const Profil = () => {
                                         }}
                                     >
                                         <div className="d-flex justify-content-between align-items-center">
-                                            <span className="small fw-bold text-white d-flex align-items-center gap-1" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>
-                                                🌿 {namaLengkap || 'Pengguna'} • Polinela Agro Digital
+                                            <span className="small fw-bold text-white d-flex align-items-center gap-1.5" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>
+                                                <Sprout size={14} /> {namaLengkap || 'Pengguna'} • Polinela Agro Digital
                                             </span>
                                             <span className="badge bg-white bg-opacity-25 text-white rounded-pill px-3 py-1 small">
                                                 Tema Aktif
@@ -833,33 +833,36 @@ const Profil = () => {
 
                                 {/* Category Switcher Tabs */}
                                 <div className="d-flex gap-2 mb-3 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-                                    {BANNER_CATEGORIES.map((cat) => (
-                                        <button
-                                            key={cat.id}
-                                            type="button"
-                                            onClick={() => setActiveCategory(cat.id)}
-                                            className={`btn btn-sm rounded-pill px-3 py-2 text-nowrap d-flex align-items-center gap-1 ${
-                                                activeCategory === cat.id 
-                                                    ? 'btn-success fw-bold shadow-sm' 
-                                                    : 'btn-outline-secondary'
-                                            }`}
-                                            style={{ fontSize: '12px' }}
-                                        >
-                                            <span>{cat.icon}</span>
-                                            <span>{cat.name}</span>
-                                        </button>
-                                    ))}
+                                    {BANNER_CATEGORIES.map((cat) => {
+                                        const CatIcon = cat.icon;
+                                        return (
+                                            <button
+                                                key={cat.id}
+                                                type="button"
+                                                onClick={() => setActiveCategory(cat.id)}
+                                                className={`btn btn-sm rounded-pill px-3 py-2 text-nowrap d-flex align-items-center gap-1.5 ${
+                                                    activeCategory === cat.id 
+                                                        ? 'btn-success fw-bold shadow-sm' 
+                                                        : 'btn-outline-secondary'
+                                                }`}
+                                                style={{ fontSize: '12px' }}
+                                            >
+                                                <CatIcon size={14} />
+                                                <span>{cat.name}</span>
+                                            </button>
+                                        );
+                                    })}
                                     <button
                                         type="button"
                                         onClick={() => setActiveCategory('solid')}
-                                        className={`btn btn-sm rounded-pill px-3 py-2 text-nowrap d-flex align-items-center gap-1 ${
+                                        className={`btn btn-sm rounded-pill px-3 py-2 text-nowrap d-flex align-items-center gap-1.5 ${
                                             activeCategory === 'solid' 
                                                 ? 'btn-success fw-bold shadow-sm' 
                                                 : 'btn-outline-secondary'
                                         }`}
                                         style={{ fontSize: '12px' }}
                                     >
-                                        <span>🎨</span>
+                                        <Palette size={14} />
                                         <span>Warna Solid</span>
                                     </button>
                                 </div>
@@ -980,7 +983,7 @@ const Profil = () => {
                                         setShowBannerPicker(false);
                                         Swal.fire({
                                             icon: 'success',
-                                            title: 'Tema Banner Diterapkan! 🎨',
+                                            title: 'Tema Banner Diterapkan!',
                                             text: 'Warna baru telah tersimpan pada profil Anda.',
                                             timer: 1800,
                                             showConfirmButton: false,

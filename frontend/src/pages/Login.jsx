@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { Lock, Mail, Eye, EyeOff, Sparkles, Sun, Moon } from 'lucide-react';
+import { Lock, Mail, Eye, EyeOff, Sparkles, Sun, Moon, ShieldCheck, BarChart3, Coffee, Package, Leaf, FlaskConical, ShoppingCart } from 'lucide-react';
 
 const Login = () => {
     const { login } = useAuth();
@@ -18,13 +18,13 @@ const Login = () => {
     const from = location.state?.from?.pathname || '/';
 
     const demoAccounts = [
-        { role: '👑 Superadmin', email: 'admin@polinela.ac.id', pass: 'admin123', color: 'btn-outline-danger' },
-        { role: '📊 Pimpinan', email: 'pimpinan@polinela.ac.id', pass: 'pimpinan123', color: 'btn-outline-primary' },
-        { role: '☕ Admin Kopi', email: 'adminkopi@polinela.ac.id', pass: 'admin123', color: 'btn-outline-success' },
-        { role: '🍫 Admin Kakao', email: 'adminkakao@polinela.ac.id', pass: 'admin123', color: 'btn-outline-warning text-dark' },
-        { role: '🌿 Admin Lada', email: 'adminlada@polinela.ac.id', pass: 'admin123', color: 'btn-outline-info' },
-        { role: '🧴 Admin Atsiri & Olahan', email: 'adminatsiri@polinela.ac.id', pass: 'admin123', color: 'btn-outline-dark' },
-        { role: '🛒 Konsumen', email: 'budi@gmail.com', pass: 'konsumen123', color: 'btn-outline-secondary' },
+        { role: 'Superadmin', icon: ShieldCheck, email: 'admin@polinela.ac.id', pass: 'admin123', color: 'btn-outline-danger' },
+        { role: 'Pimpinan', icon: BarChart3, email: 'pimpinan@polinela.ac.id', pass: 'pimpinan123', color: 'btn-outline-primary' },
+        { role: 'Admin Kopi', icon: Coffee, email: 'adminkopi@polinela.ac.id', pass: 'admin123', color: 'btn-outline-success' },
+        { role: 'Admin Kakao', icon: Package, email: 'adminkakao@polinela.ac.id', pass: 'admin123', color: 'btn-outline-warning text-dark' },
+        { role: 'Admin Lada', icon: Leaf, email: 'adminlada@polinela.ac.id', pass: 'admin123', color: 'btn-outline-info' },
+        { role: 'Admin Atsiri & Olahan', icon: FlaskConical, email: 'adminatsiri@polinela.ac.id', pass: 'admin123', color: 'btn-outline-dark' },
+        { role: 'Konsumen', icon: ShoppingCart, email: 'budi@gmail.com', pass: 'konsumen123', color: 'btn-outline-secondary' },
     ];
 
     const fillDemo = (accEmail, accPass) => {
@@ -205,17 +205,21 @@ const Login = () => {
                             </span>
                         </div>
                         <div className="d-flex flex-wrap gap-1">
-                            {demoAccounts.map((acc, idx) => (
-                                <button
-                                    key={idx}
-                                    type="button"
-                                    onClick={() => fillDemo(acc.email, acc.pass)}
-                                    className={`btn btn-sm ${acc.color} rounded-pill py-1 px-2`}
-                                    style={{ fontSize: '11px', fontWeight: 600 }}
-                                >
-                                    {acc.role}
-                                </button>
-                            ))}
+                            {demoAccounts.map((acc, idx) => {
+                                const IconComp = acc.icon;
+                                return (
+                                    <button
+                                        key={idx}
+                                        type="button"
+                                        onClick={() => fillDemo(acc.email, acc.pass)}
+                                        className={`btn btn-sm ${acc.color} rounded-pill py-1 px-2 d-inline-flex align-items-center`}
+                                        style={{ fontSize: '11px', fontWeight: 600 }}
+                                    >
+                                        <IconComp size={12} className="me-1" />
+                                        {acc.role}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>

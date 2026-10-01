@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import client from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { formatRupiah, getImageUrl } from '../../utils/format';
-import { Plus, Edit2, Trash2, Search, Package, Image as ImageIcon, Store, Layers, RefreshCw, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Package, Image as ImageIcon, Store, Layers, RefreshCw, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 import Swal from 'sweetalert2';
 
 const AdminProducts = () => {
@@ -551,8 +551,12 @@ const AdminProducts = () => {
                                                     checked={formData.is_active}
                                                     onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
                                                 />
-                                                <label className="form-check-label small fw-bold" htmlFor="statusSwitch">
-                                                    {formData.is_active ? '✅ Aktif (Ditampilkan ke Pembeli)' : '❌ Nonaktif (Disembunyikan)'}
+                                                <label className="form-check-label small fw-bold d-inline-flex align-items-center gap-1" htmlFor="statusSwitch">
+                                                    {formData.is_active ? (
+                                                        <><CheckCircle2 size={14} className="text-success" /> <span>Aktif (Ditampilkan ke Pembeli)</span></>
+                                                    ) : (
+                                                        <><XCircle size={14} className="text-danger" /> <span>Nonaktif (Disembunyikan)</span></>
+                                                    )}
                                                 </label>
                                             </div>
                                         </div>

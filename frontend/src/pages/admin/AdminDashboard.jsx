@@ -29,7 +29,10 @@ import {
     MessageSquare,
     Plus,
     Tag,
-    User
+    User,
+    Building2,
+    MapPin,
+    Zap
 } from 'lucide-react';
 
 const AdminDashboard = () => {
@@ -63,7 +66,7 @@ const AdminDashboard = () => {
         if (!product) return;
         const currentStock = product.stok ?? product.total_stok ?? 0;
         const { value: newStock } = await Swal.fire({
-            title: `⚡ Restok Cepat Produk`,
+            title: `Restok Cepat Produk`,
             html: `
                 <div class="text-start p-3 bg-light rounded-3 mb-2" style="font-size: 13px;">
                     <div class="fw-bold text-dark fs-6">${product.nama_produk}</div>
@@ -160,8 +163,8 @@ const AdminDashboard = () => {
                     <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
                         <div>
                             <div className="d-flex align-items-center gap-2 mb-1">
-                                <span className="badge bg-white text-success fw-bold px-3 py-1 rounded-pill">
-                                    🏛️ Portal Pengawasan Eksekutif
+                                <span className="badge bg-white text-success fw-bold px-3 py-1 rounded-pill d-inline-flex align-items-center gap-1">
+                                    <Building2 size={13} /> Portal Pengawasan Eksekutif
                                 </span>
                                 <span className="badge bg-white bg-opacity-25 text-white rounded-pill px-3 py-1">
                                     Politeknik Negeri Lampung
@@ -212,8 +215,8 @@ const AdminDashboard = () => {
                 <div className="card border-0 shadow-sm rounded-4 p-4 mb-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
                     <div className="d-flex justify-content-between align-items-center mb-3">
                         <div>
-                            <h5 className="fw-bold mb-0" style={{ color: 'var(--text-heading)' }}>
-                                📊 Matriks Kontribusi Finansial 4 Unit TEFA Perkebunan
+                            <h5 className="fw-bold mb-0 d-flex align-items-center gap-2" style={{ color: 'var(--text-heading)' }}>
+                                <BarChart3 size={18} className="text-success" /> Matriks Kontribusi Finansial 4 Unit TEFA Perkebunan
                             </h5>
                             <small className="text-muted">Komparasi pendapatan, produktivitas, dan pangsa pasar tiap Teaching Factory</small>
                         </div>
@@ -286,8 +289,8 @@ const AdminDashboard = () => {
                     <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
                         <div>
                             <div className="d-flex align-items-center gap-2 mb-1">
-                                <span className="badge bg-white text-success fw-bold px-3 py-1 rounded-pill">
-                                    🏪 Pusat Operasional Unit Toko
+                                <span className="badge bg-white text-success fw-bold px-3 py-1 rounded-pill d-inline-flex align-items-center gap-1">
+                                    <Store size={13} /> Pusat Operasional Unit Toko
                                 </span>
                                 <span className="badge bg-white bg-opacity-25 text-white rounded-pill px-3 py-1">
                                     TEFA #{user?.unit_id || unit?.id || 1}
@@ -297,7 +300,7 @@ const AdminDashboard = () => {
                                 {unit?.nama_unit || user?.unit?.nama_unit || 'Unit Usaha Perkebunan Polinela'}
                             </h3>
                             <p className="mb-0 text-white-50 small">
-                                {unit?.lokasi ? `📍 Lokasi: ${unit.lokasi}` : 'Pengelolaan inventaris, pemrosesan pesanan, dan verifikasi pembayaran unit.'}
+                                {unit?.lokasi ? <span className="d-inline-flex align-items-center gap-1"><MapPin size={12} /> Lokasi: {unit.lokasi}</span> : 'Pengelolaan inventaris, pemrosesan pesanan, dan verifikasi pembayaran unit.'}
                             </p>
                         </div>
 
@@ -484,109 +487,40 @@ const AdminDashboard = () => {
        ========================================================================= */
     return (
         <div className="container-fluid p-0 animate-fade-in">
-            {/* Professional Header */}
-            <div className="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
-                <div>
-                    <div className="d-flex align-items-center gap-2 mb-1">
-                        <h3 className="fw-bold mb-0" style={{ color: 'var(--text-heading)' }}>
+            {/* Superadmin Master Hero Banner */}
+            <div className="card border-0 shadow-sm rounded-4 p-4 mb-4" style={{ background: 'var(--gradient-primary)', color: '#ffffff' }}>
+                <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                    <div>
+                        <div className="d-flex align-items-center gap-2 mb-1">
+                            <span className="badge bg-white text-success fw-bold px-3 py-1 rounded-pill d-inline-flex align-items-center gap-1">
+                                <ShieldCheck size={13} /> Pusat Kendali Superadmin Master
+                            </span>
+                            <span className="badge bg-white bg-opacity-25 text-white rounded-pill px-3 py-1">
+                                Polinela Agro Digital
+                            </span>
+                        </div>
+                        <h3 className="fw-bold mb-1 text-white">
                             Dashboard Analitik & Operasional Master
                         </h3>
-                        <span 
-                            className="badge rounded-pill px-3 py-1.5 small fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm"
-                            style={{ 
-                                backgroundColor: '#ecfdf5', 
-                                color: '#047857', 
-                                border: '1px solid #a7f3d0' 
-                            }}
-                        >
-                            <ShieldCheck size={14} /> Superadmin Master
-                        </span>
+                        <p className="mb-0 text-white-50 small">
+                            Ringkasan performa penjualan, monitoring transaksi seluruh 4 unit TEFA, dan ketersediaan stok terpadu.
+                        </p>
                     </div>
-                    <p className="text-muted small mb-0">
-                        Ringkasan performa penjualan, monitoring transaksi seluruh unit TEFA, dan ketersediaan stok.
-                    </p>
-                </div>
 
-                <div className="d-flex align-items-center gap-2">
-                    <button 
-                        onClick={fetchDashboard} 
-                        className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5 rounded-pill px-3 shadow-sm bg-white"
-                    >
-                        <RefreshCw size={14} /> Refresh
-                    </button>
-                    <Link 
-                        to="/admin/reports" 
-                        className="btn btn-sm btn-agro d-flex align-items-center gap-1.5 rounded-pill px-3 shadow-sm"
-                    >
-                        <BarChart3 size={15} /> Laporan Penjualan
-                    </Link>
-                </div>
-            </div>
-
-            {/* Quick Operational Status Cards */}
-            <div className="row g-3 mb-4">
-                <div className="col-6 col-lg-3">
-                    <Link to="/admin/payments" className="text-decoration-none">
-                        <div className="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 hover-lift" style={{ borderLeft: '4px solid #f59e0b' }}>
-                            <div className="d-flex align-items-center justify-content-between">
-                                <div>
-                                    <span className="text-muted small fw-semibold d-block">Perlu Verifikasi</span>
-                                    <h4 className="fw-bold text-warning mb-0">{stats?.pesanan_perlu_verifikasi || 0}</h4>
-                                </div>
-                                <div className="p-2.5 rounded-3 bg-warning bg-opacity-10 text-warning">
-                                    <Clock size={20} />
-                                </div>
-                            </div>
-                        </div>
-                    </Link>
-                </div>
-
-                <div className="col-6 col-lg-3">
-                    <Link to="/admin/orders" className="text-decoration-none">
-                        <div className="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 hover-lift" style={{ borderLeft: '4px solid #10b981' }}>
-                            <div className="d-flex align-items-center justify-content-between">
-                                <div>
-                                    <span className="text-muted small fw-semibold d-block">Pesanan Selesai</span>
-                                    <h4 className="fw-bold text-success mb-0">{stats?.pesanan_selesai || 0}</h4>
-                                </div>
-                                <div className="p-2.5 rounded-3 bg-success bg-opacity-10 text-success">
-                                    <CheckCircle size={20} />
-                                </div>
-                            </div>
-                        </div>
-                    </Link>
-                </div>
-
-                <div className="col-6 col-lg-3">
-                    <Link to="/admin/products" className="text-decoration-none">
-                        <div className="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 hover-lift" style={{ borderLeft: '4px solid #3b82f6' }}>
-                            <div className="d-flex align-items-center justify-content-between">
-                                <div>
-                                    <span className="text-muted small fw-semibold d-block">Total Katalog Produk</span>
-                                    <h4 className="fw-bold text-primary mb-0">{stats?.total_produk || 0}</h4>
-                                </div>
-                                <div className="p-2.5 rounded-3 bg-primary bg-opacity-10 text-primary">
-                                    <Package size={20} />
-                                </div>
-                            </div>
-                        </div>
-                    </Link>
-                </div>
-
-                <div className="col-6 col-lg-3">
-                    <Link to="/admin/units" className="text-decoration-none">
-                        <div className="card border-0 shadow-sm rounded-4 p-3 bg-white h-100 hover-lift" style={{ borderLeft: '4px solid #8b5cf6' }}>
-                            <div className="d-flex align-items-center justify-content-between">
-                                <div>
-                                    <span className="text-muted small fw-semibold d-block">Unit Usaha TEFA</span>
-                                    <h4 className="fw-bold text-purple mb-0" style={{ color: '#7c3aed' }}>{unit_stats?.length || 4} Unit</h4>
-                                </div>
-                                <div className="p-2.5 rounded-3 bg-purple bg-opacity-10" style={{ color: '#7c3aed', backgroundColor: '#ede9fe' }}>
-                                    <Store size={20} />
-                                </div>
-                            </div>
-                        </div>
-                    </Link>
+                    <div className="d-flex gap-2">
+                        <button 
+                            onClick={fetchDashboard} 
+                            className="btn btn-light btn-sm fw-bold d-flex align-items-center gap-1 rounded-pill px-3 shadow-sm text-success"
+                        >
+                            <RefreshCw size={14} /> Refresh Data
+                        </button>
+                        <Link 
+                            to="/admin/reports" 
+                            className="btn btn-outline-light btn-sm rounded-pill px-3 d-flex align-items-center gap-1"
+                        >
+                            <BarChart3 size={15} /> Laporan Penjualan
+                        </Link>
+                    </div>
                 </div>
             </div>
 
@@ -602,15 +536,82 @@ const AdminDashboard = () => {
                 lowStockProducts={low_stock_products}
                 unitStats={unit_stats}
                 roleTitle="Store Overview (Master Analytics)"
-                roleSubtitle="Here's how your store & multi-unit TEFA network is performing today"
+                roleSubtitle="Monitoring performa penjualan harian, transaksi seluruh unit TEFA, dan ketersediaan stok master"
                 onQuickStock={handleQuickStock}
             />
 
+            {/* Quick Operational Status Cards */}
+            <div className="row g-3 mb-4">
+                <div className="col-6 col-lg-3">
+                    <Link to="/admin/payments" className="text-decoration-none">
+                        <div className="card border-0 shadow-sm rounded-4 p-3 h-100 hover-lift" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderLeft: '4px solid #f59e0b' }}>
+                            <div className="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <span className="text-muted small fw-semibold d-block">Perlu Verifikasi</span>
+                                    <h4 className="fw-bold text-warning mb-0">{stats?.pesanan_perlu_verifikasi || 0}</h4>
+                                </div>
+                                <div className="p-2.5 rounded-3 bg-warning bg-opacity-10 text-warning">
+                                    <Clock size={20} />
+                                </div>
+                            </div>
+                        </div>
+                    </Link>
+                </div>
+
+                <div className="col-6 col-lg-3">
+                    <Link to="/admin/orders" className="text-decoration-none">
+                        <div className="card border-0 shadow-sm rounded-4 p-3 h-100 hover-lift" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderLeft: '4px solid #10b981' }}>
+                            <div className="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <span className="text-muted small fw-semibold d-block">Pesanan Selesai</span>
+                                    <h4 className="fw-bold text-success mb-0">{stats?.pesanan_selesai || 0}</h4>
+                                </div>
+                                <div className="p-2.5 rounded-3 bg-success bg-opacity-10 text-success">
+                                    <CheckCircle size={20} />
+                                </div>
+                            </div>
+                        </div>
+                    </Link>
+                </div>
+
+                <div className="col-6 col-lg-3">
+                    <Link to="/admin/products" className="text-decoration-none">
+                        <div className="card border-0 shadow-sm rounded-4 p-3 h-100 hover-lift" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderLeft: '4px solid #3b82f6' }}>
+                            <div className="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <span className="text-muted small fw-semibold d-block">Total Katalog Produk</span>
+                                    <h4 className="fw-bold text-primary mb-0">{stats?.total_produk || 0}</h4>
+                                </div>
+                                <div className="p-2.5 rounded-3 bg-primary bg-opacity-10 text-primary">
+                                    <Package size={20} />
+                                </div>
+                            </div>
+                        </div>
+                    </Link>
+                </div>
+
+                <div className="col-6 col-lg-3">
+                    <Link to="/admin/units" className="text-decoration-none">
+                        <div className="card border-0 shadow-sm rounded-4 p-3 h-100 hover-lift" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderLeft: '4px solid #8b5cf6' }}>
+                            <div className="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <span className="text-muted small fw-semibold d-block">Unit Usaha TEFA</span>
+                                    <h4 className="fw-bold text-purple mb-0" style={{ color: '#7c3aed' }}>{unit_stats?.length || 4} Unit</h4>
+                                </div>
+                                <div className="p-2.5 rounded-3 bg-purple bg-opacity-10" style={{ color: '#7c3aed', backgroundColor: '#ede9fe' }}>
+                                    <Store size={20} />
+                                </div>
+                            </div>
+                        </div>
+                    </Link>
+                </div>
+            </div>
+
             {/* Komparasi Kinerja Seluruh Unit Usaha TEFA */}
-            <div className="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+            <div className="card border-0 shadow-sm rounded-4 p-4 mb-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
                 <div className="d-flex justify-content-between align-items-center mb-3">
                     <div>
-                        <h6 className="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                        <h6 className="fw-bold mb-0 d-flex align-items-center gap-2" style={{ color: 'var(--text-heading)' }}>
                             <Store size={18} className="text-success" /> Kinerja & Kontribusi 4 Unit Usaha TEFA
                         </h6>
                         <small className="text-muted">Komparasi perolehan omset dan volume pesanan antar unit bisnis perkebunan Polinela</small>
@@ -673,10 +674,10 @@ const AdminDashboard = () => {
             {/* Bottom Split Section: Recent Orders & Stock Alert / SUS */}
             <div className="row g-4 mb-3">
                 <div className="col-lg-8">
-                    <div className="card border-0 shadow-sm rounded-4 p-4 h-100 bg-white">
+                    <div className="card border-0 shadow-sm rounded-4 p-4 h-100" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
                         <div className="d-flex justify-content-between align-items-center mb-3">
                             <div>
-                                <h6 className="fw-bold text-dark mb-0">Pesanan Masuk Terbaru</h6>
+                                <h6 className="fw-bold mb-0" style={{ color: 'var(--text-heading)' }}>Pesanan Masuk Terbaru</h6>
                                 <small className="text-muted">Transaksi belanja masuk dari seluruh unit perkebunan</small>
                             </div>
                             <Link to="/admin/orders" className="btn btn-outline-success btn-sm rounded-pill px-3">
@@ -727,7 +728,7 @@ const AdminDashboard = () => {
                 </div>
 
                 <div className="col-lg-4 d-flex flex-column gap-3">
-                    <div className="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                    <div className="card border-0 shadow-sm rounded-4 p-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
                         <div className="d-flex justify-content-between align-items-center mb-3">
                             <h6 className="fw-bold mb-0 d-flex align-items-center gap-2 text-danger">
                                 <AlertTriangle size={17} /> Peringatan Stok Menipis
@@ -753,11 +754,11 @@ const AdminDashboard = () => {
                                             </span>
                                             <button
                                                 onClick={() => handleQuickStock(p)}
-                                                className="btn btn-sm btn-outline-success rounded-pill px-2 py-0.5"
+                                                className="btn btn-sm btn-outline-success rounded-pill px-2 py-0.5 d-inline-flex align-items-center gap-1"
                                                 style={{ fontSize: '10.5px' }}
                                                 title="Sesuaikan Stok Produk"
                                             >
-                                                ⚡ Restok
+                                                <Zap size={11} /> Restok
                                             </button>
                                         </div>
                                     </div>

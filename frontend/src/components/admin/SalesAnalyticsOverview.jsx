@@ -15,7 +15,9 @@ import {
     ChevronRight,
     ExternalLink,
     SlidersHorizontal,
-    MoveHorizontal
+    MoveHorizontal,
+    MapPin,
+    Zap
 } from 'lucide-react';
 
 const SalesAnalyticsOverview = ({ 
@@ -190,7 +192,7 @@ const SalesAnalyticsOverview = ({
         if (!pt) return;
         const aov = pt.sales > 0 ? Math.round(pt.value / pt.sales) : 0;
         Swal.fire({
-            title: `📊 Rincian Penjualan`,
+            title: `Rincian Penjualan`,
             html: `
                 <div class="text-start p-3 bg-light rounded-4 mb-2" style="font-size: 13.5px;">
                     <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
@@ -420,8 +422,8 @@ const SalesAnalyticsOverview = ({
                                     <option value="daily">Daily Sales</option>
                                     <option value="monthly">Monthly Sales</option>
                                 </select>
-                                <span className="badge bg-light text-muted border rounded-pill py-1.5 px-2.5 small" style={{ fontSize: '11px' }}>
-                                    📅 {chartPoints[0]?.label || '-'} - {chartPoints[chartPoints.length - 1]?.label || '-'}
+                                <span className="badge bg-light text-muted border rounded-pill py-1.5 px-2.5 small d-inline-flex align-items-center gap-1" style={{ fontSize: '11px' }}>
+                                    <Calendar size={11} /> {chartPoints[0]?.label || '-'} - {chartPoints[chartPoints.length - 1]?.label || '-'}
                                 </span>
                             </div>
                         </div>
@@ -655,8 +657,8 @@ const SalesAnalyticsOverview = ({
                                     height: '6px'
                                 }}
                             />
-                            <span className="badge bg-success bg-opacity-10 text-success fw-bold px-2.5 py-1 rounded-pill small" style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>
-                                📍 {activePoint?.label || '-'} : {formatRupiah(activePoint?.value || 0)}
+                            <span className="badge bg-success bg-opacity-10 text-success fw-bold px-2.5 py-1 rounded-pill small d-inline-flex align-items-center gap-1" style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>
+                                <MapPin size={11} /> {activePoint?.label || '-'} : {formatRupiah(activePoint?.value || 0)}
                             </span>
                         </div>
 
@@ -924,7 +926,8 @@ const SalesAnalyticsOverview = ({
                                     className="btn btn-agro flex-grow-1 rounded-pill py-1.5 fw-semibold shadow-sm d-flex align-items-center justify-content-center gap-1.5"
                                     style={{ fontSize: '12px' }}
                                 >
-                                    <span>⚡ Restok Cepat</span>
+                                    <Zap size={13} />
+                                    <span>Restok Cepat</span>
                                 </button>
                                 <a 
                                     href={`/admin/products?search=${encodeURIComponent(lowStockProducts[0]?.nama_produk || '')}`} 

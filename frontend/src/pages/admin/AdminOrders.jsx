@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import client from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { formatRupiah, formatDate, getOrderStatusBadge, getPaymentStatusBadge } from '../../utils/format';
-import { Eye, Truck, CheckCircle2, XCircle, Search, Edit3, Printer } from 'lucide-react';
+import { Eye, Truck, CheckCircle2, XCircle, Search, Edit3, Printer, Package, MessageCircle, Send } from 'lucide-react';
 import Swal from 'sweetalert2';
 import ReceiptModal from '../../components/ReceiptModal';
 
@@ -76,13 +76,13 @@ const AdminOrders = () => {
 
                 Swal.fire({
                     icon: 'success',
-                    title: 'Status Diperbarui! 📦',
+                    title: 'Status Diperbarui!',
                     html: `
                         <p class="mb-2">Status pesanan berhasil diubah.</p>
-                        <small class="text-success d-block">📧 Notifikasi Email & In-App otomatis terkirim ke pembeli.</small>
+                        <small class="text-success d-block">Notifikasi Email & In-App otomatis terkirim ke pembeli.</small>
                     `,
                     showCancelButton: !!waUrl,
-                    cancelButtonText: '📲 Kirim WhatsApp ke Pembeli',
+                    cancelButtonText: 'Kirim WhatsApp ke Pembeli',
                     cancelButtonColor: '#16a34a',
                     confirmButtonText: 'Selesai',
                     confirmButtonColor: '#15803d',
@@ -111,12 +111,12 @@ const AdminOrders = () => {
         const courier = (order.shipping?.ekspedisi || order.shipping?.kurir || 'Kurir Polinela').toUpperCase();
 
         const { value: formValues } = await Swal.fire({
-            title: `🚚 Kirim Pesanan ${orderNo}`,
+            title: `Kirim Pesanan ${orderNo}`,
             html: `
                 <div class="text-start small p-3 bg-light rounded-3 mb-3 border">
-                    <p class="mb-1"><strong>👤 Penerima:</strong> ${recipient} (${phone})</p>
-                    <p class="mb-1"><strong>📍 Alamat:</strong> ${address}</p>
-                    <p class="mb-0"><strong>📦 Kurir / Ekspedisi:</strong> <span class="badge bg-primary">${courier}</span></p>
+                    <p class="mb-1"><strong>Penerima:</strong> ${recipient} (${phone})</p>
+                    <p class="mb-1"><strong>Alamat:</strong> ${address}</p>
+                    <p class="mb-0"><strong>Kurir / Ekspedisi:</strong> <span class="badge bg-primary">${courier}</span></p>
                 </div>
                 <div class="text-start">
                     <label class="form-label fw-semibold small">Masukkan Nomor Resi Pengiriman:</label>
@@ -126,7 +126,7 @@ const AdminOrders = () => {
             `,
             focusConfirm: false,
             showCancelButton: true,
-            confirmButtonText: '🚀 Konfirmasi Kirim Sekarang',
+            confirmButtonText: 'Konfirmasi Kirim Sekarang',
             cancelButtonText: 'Batal',
             confirmButtonColor: '#0284c7',
             preConfirm: () => {
@@ -153,7 +153,7 @@ const AdminOrders = () => {
                 if (res.data.status === 'success' || res.data.success) {
                     Swal.fire({
                         icon: 'success',
-                        title: 'Pesanan Berhasil Dikirim! 🚚',
+                        title: 'Pesanan Berhasil Dikirim!',
                         text: `Nomor resi (${formValues.resi}) dan notifikasi telah dikirim ke pembeli.`,
                         timer: 2500,
                         showConfirmButton: false,
@@ -180,7 +180,7 @@ const AdminOrders = () => {
     const handleQuickComplete = async (order) => {
         const orderNo = order.order_number || order.no_pesanan || `#${order.id}`;
         const result = await Swal.fire({
-            title: `✅ Selesaikan Pesanan ${orderNo}?`,
+            title: `Selesaikan Pesanan ${orderNo}?`,
             text: 'Pesanan akan ditandai telah selesai diterima pembeli. Notifikasi terima kasih & ulasan produk akan otomatis dikirim ke pembeli.',
             icon: 'question',
             showCancelButton: true,
@@ -206,7 +206,7 @@ const AdminOrders = () => {
                 if (res.data.status === 'success' || res.data.success) {
                     Swal.fire({
                         icon: 'success',
-                        title: 'Pesanan Selesai! 🎉',
+                        title: 'Pesanan Selesai!',
                         text: 'Pesanan resmi selesai dan notifikasi telah dikirim ke pembeli.',
                         timer: 2000,
                         showConfirmButton: false,
@@ -414,7 +414,8 @@ const AdminOrders = () => {
                                                 className={`btn btn-sm rounded-pill px-3 d-inline-flex align-items-center gap-1 ${statusUpdate === 'diproses' ? 'btn-warning text-dark fw-bold shadow-sm' : 'btn-outline-secondary'}`}
                                                 onClick={() => setStatusUpdate('diproses')}
                                             >
-                                                <span>📦 Sedang Diproses (Packing)</span>
+                                                <Package size={14} />
+                                                <span>Sedang Diproses (Packing)</span>
                                             </button>
                                             <button
                                                 type="button"
@@ -422,7 +423,7 @@ const AdminOrders = () => {
                                                 onClick={() => setStatusUpdate('dikirim')}
                                             >
                                                 <Truck size={14} />
-                                                <span>🚚 Sedang Dikirim</span>
+                                                <span>Sedang Dikirim</span>
                                             </button>
                                             <button
                                                 type="button"
@@ -430,7 +431,7 @@ const AdminOrders = () => {
                                                 onClick={() => setStatusUpdate('selesai')}
                                             >
                                                 <CheckCircle2 size={14} />
-                                                <span>✅ Selesai (Diterima)</span>
+                                                <span>Selesai (Diterima)</span>
                                             </button>
                                             <button
                                                 type="button"
@@ -438,7 +439,7 @@ const AdminOrders = () => {
                                                 onClick={() => setStatusUpdate('dibatalkan')}
                                             >
                                                 <XCircle size={14} />
-                                                <span>❌ Batalkan</span>
+                                                <span>Batalkan</span>
                                             </button>
                                         </div>
                                     </div>
@@ -521,7 +522,7 @@ const AdminOrders = () => {
                                             onClick={() => handleChatCustomerWA(selectedOrder)}
                                             title="Chat WhatsApp langsung ke pembeli"
                                         >
-                                            <span style={{ fontSize: '14px' }}>📲</span>
+                                            <MessageCircle size={15} />
                                             <span>WhatsApp Pembeli</span>
                                         </button>
                                     </div>

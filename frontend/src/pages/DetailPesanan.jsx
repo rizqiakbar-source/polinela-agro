@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import client from '../api/client';
 import { formatRupiah, formatDate, getOrderStatusBadge, getPaymentStatusBadge, getPaymentProofUrl } from '../utils/format';
-import { ArrowLeft, Store, CreditCard, Truck, Upload, CheckCircle2, XCircle, AlertCircle, Info, Printer, Zap } from 'lucide-react';
+import { ArrowLeft, Store, CreditCard, Truck, Upload, CheckCircle2, XCircle, AlertCircle, Info, Printer, Zap, Mail, Phone, Landmark, QrCode, Wallet, MessageCircle, ExternalLink } from 'lucide-react';
 import Swal from 'sweetalert2';
 import ReceiptModal from '../components/ReceiptModal';
 import { triggerMidtransPayment } from '../utils/midtrans';
@@ -87,7 +87,7 @@ const DetailPesanan = () => {
                     setOrder(syncRes.data.order);
                     Swal.fire({
                         icon: 'success',
-                        title: 'Pembayaran Berhasil Diverifikasi! 🎉',
+                        title: 'Pembayaran Berhasil Diverifikasi!',
                         text: 'Pesanan Anda kini resmi LUNAS & sedang disiapkan.',
                         timer: 2500,
                         showConfirmButton: false,
@@ -181,7 +181,7 @@ const DetailPesanan = () => {
                     await client.post(`/payment/finish/${id}`, { payment_type: result.payment_type || 'midtrans' });
                     Swal.fire({
                         icon: 'success',
-                        title: 'Pembayaran Berhasil! 🎉',
+                        title: 'Pembayaran Berhasil!',
                         text: 'Pesanan Anda telah otomatis diverifikasi LUNAS.',
                     });
                     await fetchOrderDetail();
@@ -412,8 +412,8 @@ const DetailPesanan = () => {
                             <h2 className="fw-bold text-dark mb-1">Detail Pesanan #{orderNumberDisplay}</h2>
                             <div className="d-flex align-items-center gap-2 flex-wrap">
                                 <p className="text-muted small mb-0">Dibuat pada {formatDate(order.created_at)}</p>
-                                <span className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill" style={{ fontSize: '11px' }}>
-                                    📧 Notifikasi Email Aktif
+                                <span className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill d-inline-flex align-items-center gap-1" style={{ fontSize: '11px' }}>
+                                    <Mail size={12} /> Notifikasi Email Aktif
                                 </span>
                             </div>
                         </div>
@@ -421,10 +421,10 @@ const DetailPesanan = () => {
                             <button
                                 type="button"
                                 onClick={handleOpenWhatsApp}
-                                className="btn btn-outline-success btn-sm rounded-pill px-3 py-2 fw-semibold d-flex align-items-center gap-1 shadow-sm bg-white"
+                                className="btn btn-outline-success btn-sm rounded-pill px-3 py-2 fw-semibold d-flex align-items-center gap-1.5 shadow-sm bg-white"
                                 title="Kirim konfirmasi / chat ke Admin Unit Toko"
                             >
-                                <span style={{ fontSize: '15px' }}>📲</span>
+                                <MessageCircle size={15} />
                                 <span>WhatsApp Unit</span>
                             </button>
                             <button
@@ -452,10 +452,12 @@ const DetailPesanan = () => {
                                 Pesanan ini merupakan bagian dari belanja multi-toko Anda. Pembayaran untuk semua unit di bawah ini <strong>cukup 1 kali transfer</strong>:
                             </p>
                             <div className="d-flex flex-wrap gap-2">
-                                <span className="badge bg-success">🏪 {order.unit?.nama_unit} (#{orderNumberDisplay} - {formatRupiah(order.grand_total ?? order.total_akhir)})</span>
+                                <span className="badge bg-success d-inline-flex align-items-center gap-1">
+                                    <Store size={12} /> {order.unit?.nama_unit} (#{orderNumberDisplay} - {formatRupiah(order.grand_total ?? order.total_akhir)})
+                                </span>
                                 {siblingOrders.map((sib) => (
-                                    <Link key={sib.id} to={`/pesanan/${sib.id}`} className="badge bg-light text-dark text-decoration-none border">
-                                        🏪 {sib.unit?.nama_unit} (#{sib.order_number || sib.no_pesanan} - {formatRupiah(sib.grand_total ?? sib.total_akhir)}) ↗
+                                    <Link key={sib.id} to={`/pesanan/${sib.id}`} className="badge bg-light text-dark text-decoration-none border d-inline-flex align-items-center gap-1">
+                                        <Store size={12} /> {sib.unit?.nama_unit} (#{sib.order_number || sib.no_pesanan} - {formatRupiah(sib.grand_total ?? sib.total_akhir)}) <ExternalLink size={10} className="ms-0.5" />
                                     </Link>
                                 ))}
                             </div>
@@ -621,9 +623,9 @@ const DetailPesanan = () => {
                                     </p>
                                     
                                     <div className="d-flex justify-content-center flex-wrap gap-2 mb-3">
-                                        <span className="badge bg-white text-dark border px-2 py-1 small">🏦 BCA / Mandiri / BRI / BNI VA</span>
-                                        <span className="badge bg-white text-dark border px-2 py-1 small">📱 QRIS (Semua E-Wallet)</span>
-                                        <span className="badge bg-white text-dark border px-2 py-1 small">🟢 GoPay & ShopeePay</span>
+                                        <span className="badge bg-white text-dark border px-2 py-1 small d-inline-flex align-items-center gap-1"><Landmark size={12} className="text-primary" /> BCA / Mandiri / BRI / BNI VA</span>
+                                        <span className="badge bg-white text-dark border px-2 py-1 small d-inline-flex align-items-center gap-1"><QrCode size={12} className="text-success" /> QRIS (Semua E-Wallet)</span>
+                                        <span className="badge bg-white text-dark border px-2 py-1 small d-inline-flex align-items-center gap-1"><Wallet size={12} className="text-success" /> GoPay & ShopeePay</span>
                                     </div>
 
                                     <button
@@ -640,7 +642,7 @@ const DetailPesanan = () => {
                                         ) : (
                                             <>
                                                 <Zap size={18} className="text-warning fill-warning" />
-                                                <span>⚡ Bayar Sekarang via Midtrans</span>
+                                                <span>Bayar Sekarang via Midtrans</span>
                                             </>
                                         )}
                                     </button>

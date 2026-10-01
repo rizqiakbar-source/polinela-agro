@@ -313,7 +313,12 @@ const AdminReports = () => {
                                     <tbody>
                                         {unitBreakdown.map((u) => (
                                             <tr key={u.id || u.unit_id}>
-                                                <td className="fw-semibold">🏪 {u.nama_unit}</td>
+                                                <td className="fw-semibold">
+                                                    <span className="d-inline-flex align-items-center gap-1">
+                                                        <Store size={14} className="text-primary" />
+                                                        <span>{u.nama_unit}</span>
+                                                    </span>
+                                                </td>
                                                 <td className="text-center">{u.orders_count || 0}</td>
                                                 <td className="text-end fw-bold text-success">
                                                     {formatRupiah(u.orders_sum_total_akhir || u.total_pendapatan || 0)}

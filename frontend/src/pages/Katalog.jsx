@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import client from '../api/client';
 import ProductCard from '../components/ProductCard';
-import { Search, Filter, X, ArrowUpDown } from 'lucide-react';
+import { Search, Filter, X, ArrowUpDown, Store } from 'lucide-react';
 
 const Katalog = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -147,7 +147,7 @@ const Katalog = () => {
                                             className={`btn btn-sm text-start rounded-3 d-flex justify-content-between align-items-center ${selectedUnit === String(unit.id) ? 'btn-success text-white fw-bold' : 'btn-outline-light text-dark'}`}
                                             onClick={() => updateFilter('unit', String(unit.id))}
                                         >
-                                            <span>🏪 {unit.nama_unit}</span>
+                                            <span className="d-flex align-items-center gap-2"><Store size={14} /> {unit.nama_unit}</span>
                                             <span className="badge bg-secondary bg-opacity-25 text-dark small">{unit.products_count || 0}</span>
                                         </button>
                                     ))}
@@ -213,7 +213,9 @@ const Katalog = () => {
                             </div>
                         ) : products.length === 0 ? (
                             <div className="card border-0 shadow-sm rounded-4 p-5 text-center bg-white">
-                                <div className="fs-1 mb-2">🔍</div>
+                                <div className="mb-3 text-muted d-flex justify-content-center">
+                                    <Search size={48} className="opacity-50" />
+                                </div>
                                 <h5 className="fw-bold">Produk Tidak Ditemukan</h5>
                                 <p className="text-muted small">Coba ubah kata kunci pencarian atau bersihkan filter yang aktif.</p>
                                 <button className="btn btn-outline-success btn-sm rounded-pill mx-auto px-4" onClick={clearFilters}>

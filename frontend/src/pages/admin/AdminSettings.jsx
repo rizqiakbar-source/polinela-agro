@@ -8,7 +8,7 @@ const AdminSettings = () => {
         tagline: 'Marketplace Hasil Pertanian & Perkebunan Politeknik Negeri Lampung',
         alamat_kampus: 'Jl. Soekarno Hatta No. 10, Rajabasa, Bandar Lampung 35144',
         email_kontak: 'havertz0921@gmail.com',
-        no_telepon: '(0721) 703995',
+        no_telepon: '08810805927',
         whatsapp_cs: '0881080592737',
         tarif_ongkir_default: '10000',
         bank_nama: 'Bank Mandiri',

@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useTheme } from '../context/ThemeContext';
-import { ShoppingCart, User, LogOut, LayoutDashboard, Package, History, Search, Sun, Moon } from 'lucide-react';
+import { ShoppingCart, User, LogOut, LayoutDashboard, Package, History, Search, Sun, Moon, Sprout, ShieldCheck, MapPin } from 'lucide-react';
 
 const Navbar = () => {
     const { user, isStaffOrAdmin, logout } = useAuth();
@@ -26,15 +26,20 @@ const Navbar = () => {
             <div className="top-info-bar py-1 px-3 small d-none d-md-block">
                 <div className="container d-flex justify-content-between align-items-center">
                     <div>
-                        <span>🌱 Polinela Agro - Hasil Pertanian & Perkebunan Unggulan Politeknik Negeri Lampung</span>
+                        <span className="d-inline-flex align-items-center gap-1">
+                            <Sprout size={14} className="text-success" /> 
+                            Polinela Agro - Hasil Pertanian & Perkebunan Unggulan Politeknik Negeri Lampung
+                        </span>
                     </div>
                     <div className="d-flex gap-3 align-items-center">
                         {isStaffOrAdmin && (
-                            <Link to="/admin" className="text-white text-decoration-none fw-semibold">
-                                <i className="bi bi-shield-lock me-1"></i> Portal Admin
+                            <Link to="/admin" className="text-white text-decoration-none fw-semibold d-inline-flex align-items-center gap-1">
+                                <ShieldCheck size={14} /> Portal Admin
                             </Link>
                         )}
-                        <span><i className="bi bi-geo-alt me-1"></i> Bandar Lampung</span>
+                        <span className="d-inline-flex align-items-center gap-1">
+                            <MapPin size={14} /> Bandar Lampung
+                        </span>
                     </div>
                 </div>
             </div>
@@ -45,7 +50,7 @@ const Navbar = () => {
                     {/* Brand Logo */}
                     <Link to="/" className="navbar-brand d-flex align-items-center gap-2 text-decoration-none">
                         <div className="rounded-3 p-2 d-flex align-items-center justify-content-center" style={{ width: '38px', height: '38px', background: 'var(--gradient-primary)' }}>
-                            <span className="fw-bold fs-5">🌿</span>
+                            <Sprout size={22} className="text-white" />
                         </div>
                         <div>
                             <span className="fw-bold fs-5 d-block lh-1" style={{ color: 'var(--color-primary)' }}>POLINELA AGRO</span>

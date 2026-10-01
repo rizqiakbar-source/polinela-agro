@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Sprout, Coffee, Package, Palmtree, MapPin, Mail, Phone } from 'lucide-react';
 
 const Footer = () => {
     return (
@@ -9,7 +10,9 @@ const Footer = () => {
                     {/* Column 1: Info */}
                     <div className="col-lg-4 col-md-6">
                         <div className="d-flex align-items-center gap-2 mb-3">
-                            <span className="fs-3">🌿</span>
+                            <div className="bg-success text-white p-2 rounded-3 d-inline-flex align-items-center justify-content-center">
+                                <Sprout size={24} />
+                            </div>
                             <h5 className="fw-bold mb-0 text-success">POLINELA AGRO</h5>
                         </div>
                         <p className="text-secondary small">
@@ -27,10 +30,10 @@ const Footer = () => {
                     <div className="col-lg-3 col-md-6">
                         <h6 className="fw-bold text-white mb-3">Unit Toko Perkebunan</h6>
                         <ul className="list-unstyled text-secondary small mb-0">
-                            <li className="mb-2"><Link to="/katalog?unit=1" className="text-secondary text-decoration-none hover-white">☕ Unit Kopi Polinela</Link></li>
-                            <li className="mb-2"><Link to="/katalog?unit=2" className="text-secondary text-decoration-none hover-white">🍫 Unit Kakao & Cokelat</Link></li>
-                            <li className="mb-2"><Link to="/katalog?unit=3" className="text-secondary text-decoration-none hover-white">🌴 Unit Kelapa Sawit</Link></li>
-                            <li className="mb-2"><Link to="/katalog?unit=4" className="text-secondary text-decoration-none hover-white">🌱 Unit Bibit & Hortikultura</Link></li>
+                            <li className="mb-2"><Link to="/katalog?unit=1" className="text-secondary text-decoration-none hover-white d-inline-flex align-items-center gap-2"><Coffee size={15} className="text-warning" /> Unit Kopi Polinela</Link></li>
+                            <li className="mb-2"><Link to="/katalog?unit=2" className="text-secondary text-decoration-none hover-white d-inline-flex align-items-center gap-2"><Package size={15} className="text-info" /> Unit Kakao & Cokelat</Link></li>
+                            <li className="mb-2"><Link to="/katalog?unit=3" className="text-secondary text-decoration-none hover-white d-inline-flex align-items-center gap-2"><Palmtree size={15} className="text-success" /> Unit Kelapa Sawit</Link></li>
+                            <li className="mb-2"><Link to="/katalog?unit=4" className="text-secondary text-decoration-none hover-white d-inline-flex align-items-center gap-2"><Sprout size={15} className="text-success" /> Unit Bibit & Hortikultura</Link></li>
                         </ul>
                     </div>
 
@@ -48,17 +51,17 @@ const Footer = () => {
                     {/* Column 4: Contact & Location */}
                     <div className="col-lg-3 col-md-6">
                         <h6 className="fw-bold text-white mb-3">Kontak & Lokasi</h6>
-                        <p className="text-secondary small mb-2">
-                            <i className="bi bi-geo-alt-fill text-success me-2"></i>
-                            Jl. Soekarno Hatta No. 10, Rajabasa, Kota Bandar Lampung, Lampung 35144
+                        <p className="text-secondary small mb-2 d-flex align-items-start gap-2">
+                            <MapPin size={16} className="text-success flex-shrink-0 mt-1" />
+                            <span>Jl. Soekarno Hatta No. 10, Rajabasa, Kota Bandar Lampung, Lampung 35144</span>
                         </p>
-                        <p className="text-secondary small mb-2">
-                            <i className="bi bi-envelope-fill text-success me-2"></i>
-                            agro@polinela.ac.id
+                        <p className="text-secondary small mb-2 d-flex align-items-center gap-2">
+                            <Mail size={16} className="text-success flex-shrink-0" />
+                            <span>agro@polinela.ac.id</span>
                         </p>
-                        <p className="text-secondary small mb-0">
-                            <i className="bi bi-telephone-fill text-success me-2"></i>
-                            (0721) 703995
+                        <p className="text-secondary small mb-0 d-flex align-items-center gap-2">
+                            <Phone size={16} className="text-success flex-shrink-0" />
+                            <span>08810805927</span>
                         </p>
                     </div>
                 </div>

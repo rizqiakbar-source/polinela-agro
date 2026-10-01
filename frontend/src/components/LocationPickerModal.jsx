@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { 
     MapPin, Search, Navigation, X, Check, Compass, 
-    Layers, Loader2, Info, Building2, Sparkles 
+    Layers, Loader2, Info, Building2, Sparkles, Globe, Map
 } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -136,7 +136,7 @@ const LocationPickerModal = ({ isOpen, onClose, onSelectLocation, initialCoords,
                     className: 'custom-campus-pin',
                     html: `
                         <div style="background: #15803d; color: white; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(21,128,61,0.5); border: 2.5px solid white;">
-                            <span style="font-size: 16px;">🏫</span>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>
                         </div>
                     `,
                     iconSize: [34, 34],
@@ -152,7 +152,9 @@ const LocationPickerModal = ({ isOpen, onClose, onSelectLocation, initialCoords,
                     html: `
                         <div style="position: relative; width: 40px; height: 48px;">
                             <div style="background: #dc2626; color: white; width: 38px; height: 38px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(220,38,38,0.45); border: 3px solid white; position: absolute; top: 0; left: 1px;">
-                                <span style="transform: rotate(45deg); font-size: 16px;">📍</span>
+                                <div style="transform: rotate(45deg); display: flex; align-items: center; justify-content: center;">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+                                </div>
                             </div>
                         </div>
                     `,
@@ -452,26 +454,29 @@ const LocationPickerModal = ({ isOpen, onClose, onSelectLocation, initialCoords,
                             <button
                                 type="button"
                                 onClick={() => handleSwitchMapLayer('google_streets')}
-                                className={`btn btn-sm rounded-pill px-3 py-1 fw-semibold transition-all ${mapLayerType === 'google_streets' ? 'btn-success text-white shadow-sm' : 'btn-light text-muted'}`}
+                                className={`btn btn-sm rounded-pill px-3 py-1 fw-semibold transition-all d-inline-flex align-items-center gap-1.5 ${mapLayerType === 'google_streets' ? 'btn-success text-white shadow-sm' : 'btn-light text-muted'}`}
                                 style={{ fontSize: '12px' }}
                             >
-                                🗺️ Google Maps
+                                <Map size={13} />
+                                <span>Google Maps</span>
                             </button>
                             <button
                                 type="button"
                                 onClick={() => handleSwitchMapLayer('google_hybrid')}
-                                className={`btn btn-sm rounded-pill px-3 py-1 fw-semibold transition-all ${mapLayerType === 'google_hybrid' ? 'btn-success text-white shadow-sm' : 'btn-light text-muted'}`}
+                                className={`btn btn-sm rounded-pill px-3 py-1 fw-semibold transition-all d-inline-flex align-items-center gap-1.5 ${mapLayerType === 'google_hybrid' ? 'btn-success text-white shadow-sm' : 'btn-light text-muted'}`}
                                 style={{ fontSize: '12px' }}
                             >
-                                🛰️ Satelit Google
+                                <Layers size={13} />
+                                <span>Satelit Google</span>
                             </button>
                             <button
                                 type="button"
                                 onClick={() => handleSwitchMapLayer('osm')}
-                                className={`btn btn-sm rounded-pill px-3 py-1 fw-semibold transition-all ${mapLayerType === 'osm' ? 'btn-success text-white shadow-sm' : 'btn-light text-muted'}`}
+                                className={`btn btn-sm rounded-pill px-3 py-1 fw-semibold transition-all d-inline-flex align-items-center gap-1.5 ${mapLayerType === 'osm' ? 'btn-success text-white shadow-sm' : 'btn-light text-muted'}`}
                                 style={{ fontSize: '12px' }}
                             >
-                                🌐 OpenStreet
+                                <Globe size={13} />
+                                <span>OpenStreet</span>
                             </button>
                         </div>
                     </div>
@@ -491,8 +496,8 @@ const LocationPickerModal = ({ isOpen, onClose, onSelectLocation, initialCoords,
                                 <div className="overflow-hidden">
                                     <div className="d-flex align-items-center gap-2 mb-1">
                                         <span className="fw-bold text-dark small">Alamat Terpilih:</span>
-                                        <span className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill" style={{ fontSize: '11px' }}>
-                                            📏 ± {distanceKm} km dari Kampus Polinela
+                                        <span className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill d-inline-flex align-items-center gap-1" style={{ fontSize: '11px' }}>
+                                            <Navigation size={11} /> ± {distanceKm} km dari Kampus Polinela
                                         </span>
                                     </div>
                                     <div className="text-dark small text-truncate fw-medium" title={addressDetails.displayName}>

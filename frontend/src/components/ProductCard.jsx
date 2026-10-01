@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCart, Star } from 'lucide-react';
+import { ShoppingCart, Star, Store } from 'lucide-react';
 import { formatRupiah, getImageUrl } from '../utils/format';
 import { useCart } from '../context/CartContext';
 
@@ -33,10 +33,11 @@ const ProductCard = ({ product }) => {
                 {/* Unit Toko Badge */}
                 {product.unit && (
                     <span 
-                        className="position-absolute top-0 start-0 m-2 badge bg-success shadow-sm rounded-pill px-2 py-1 small"
+                        className="position-absolute top-0 start-0 m-2 badge bg-success shadow-sm rounded-pill px-2 py-1 small d-inline-flex align-items-center"
                         style={{ fontSize: '11px', backdropFilter: 'blur(6px)' }}
                     >
-                        🏪 {product.unit.nama_unit}
+                        <Store size={12} className="me-1" />
+                        {product.unit.nama_unit}
                     </span>
                 )}
 

@@ -239,8 +239,14 @@ const AdminPayments = () => {
                                                         </button>
                                                     </div>
                                                 ) : (
-                                                    <span className="text-muted small">
-                                                        {p.status === 'lunas' ? '✅ Terverifikasi' : (p.status === 'ditolak' ? '❌ Ditolak' : 'Menunggu')}
+                                                    <span className="text-muted small d-inline-flex align-items-center gap-1">
+                                                        {p.status === 'lunas' ? (
+                                                            <><CheckCircle2 size={13} className="text-success" /> <span>Terverifikasi</span></>
+                                                        ) : p.status === 'ditolak' ? (
+                                                            <><XCircle size={13} className="text-danger" /> <span>Ditolak</span></>
+                                                        ) : (
+                                                            <span>Menunggu</span>
+                                                        )}
                                                     </span>
                                                 )}
                                             </td>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import client from '../api/client';
 import { formatRupiah, formatDate, getOrderStatusBadge, getPaymentStatusBadge } from '../utils/format';
-import { ShoppingBag, Eye, Store, ArrowRight, Printer, Zap } from 'lucide-react';
+import { ShoppingBag, Eye, Store, ArrowRight, Printer, Zap, Package } from 'lucide-react';
 import ReceiptModal from '../components/ReceiptModal';
 import { triggerMidtransPayment } from '../utils/midtrans';
 import Swal from 'sweetalert2';
@@ -71,7 +71,7 @@ const RiwayatPesanan = () => {
                     await client.post(`/payment/finish/${orderId}`, { payment_type: result.payment_type || 'midtrans' });
                     Swal.fire({
                         icon: 'success',
-                        title: 'Pembayaran Berhasil Diverifikasi! 🎉',
+                        title: 'Pembayaran Berhasil Diverifikasi!',
                         text: 'Status pesanan Anda kini LUNAS.',
                     });
                     await fetchOrders();
@@ -151,7 +151,9 @@ const RiwayatPesanan = () => {
                     </div>
                 ) : orders.length === 0 ? (
                     <div className="card border-0 shadow-sm rounded-4 p-5 text-center bg-white">
-                        <div className="fs-1 mb-3">📦</div>
+                        <div className="mb-3 d-flex justify-content-center">
+                            <Package size={56} className="text-success opacity-75" />
+                        </div>
                         <h5 className="fw-bold mb-2">Tidak Ada Pesanan</h5>
                         <p className="text-muted small mb-4">Anda belum memiliki pesanan dengan status ini.</p>
                         <Link to="/katalog" className="btn btn-success rounded-pill px-4 mx-auto">

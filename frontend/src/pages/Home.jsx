@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import client from '../api/client';
 import ProductCard from '../components/ProductCard';
-import { ArrowRight, ShoppingBag, ShieldCheck, Truck, Award, Sparkles } from 'lucide-react';
+import { ArrowRight, ShoppingBag, ShieldCheck, Truck, Award, Sparkles, Coffee, Package, Palmtree, Sprout, TreePine } from 'lucide-react';
 
 const Home = () => {
     const [units, setUnits] = useState([]);
@@ -39,11 +39,22 @@ const Home = () => {
         fetchHomeData();
     }, []);
 
-    const unitIcons = {
-        '1': '☕',
-        '2': '🍫',
-        '3': '🌴',
-        '4': '🌱',
+    const renderUnitIcon = (unitId, unitNama = '') => {
+        const id = String(unitId);
+        const name = unitNama.toLowerCase();
+        if (id === '1' || name.includes('kopi')) {
+            return <Coffee size={36} className="text-warning" />;
+        }
+        if (id === '2' || name.includes('kakao') || name.includes('cokelat')) {
+            return <Package size={36} className="text-info" />;
+        }
+        if (id === '3' || name.includes('sawit') || name.includes('kelapa')) {
+            return <Palmtree size={36} className="text-success" />;
+        }
+        if (id === '4' || name.includes('bibit') || name.includes('horti')) {
+            return <Sprout size={36} className="text-success" />;
+        }
+        return <TreePine size={36} className="text-success" />;
     };
 
     const [currentSlide, setCurrentSlide] = useState(0);
@@ -272,8 +283,8 @@ const Home = () => {
                             <div key={unit.id} className="col-lg-3 col-md-6">
                                 <Link to={`/katalog?unit=${unit.id}`} className="text-decoration-none">
                                     <div className="card h-100 border-0 shadow-sm rounded-4 p-4 unit-card text-center transition-all">
-                                        <div className="fs-1 mb-2">
-                                            {unitIcons[String(unit.id)] || '🌱'}
+                                        <div className="mb-2 d-flex justify-content-center align-items-center" style={{ minHeight: '45px' }}>
+                                            {renderUnitIcon(unit.id, unit.nama_unit)}
                                         </div>
                                         <h5 className="fw-bold text-heading mb-1">{unit.nama_unit}</h5>
                                         <p className="text-muted small mb-3 text-truncate-2" style={{ minHeight: '38px' }}>

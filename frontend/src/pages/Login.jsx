@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { Lock, Mail, Eye, EyeOff, Sparkles, Sun, Moon, ShieldCheck, BarChart3, Coffee, Package, Leaf, FlaskConical, ShoppingCart } from 'lucide-react';
+import { Lock, Mail, Eye, EyeOff, Sparkles, Sun, Moon, ShieldCheck, BarChart3, Coffee, Package, Leaf, FlaskConical } from 'lucide-react';
 
 const Login = () => {
     const { login } = useAuth();
@@ -24,7 +24,6 @@ const Login = () => {
         { role: 'Admin Kakao', icon: Package, email: 'adminkakao@polinela.ac.id', pass: 'admin123', color: 'btn-outline-warning text-dark' },
         { role: 'Admin Lada', icon: Leaf, email: 'adminlada@polinela.ac.id', pass: 'admin123', color: 'btn-outline-info' },
         { role: 'Admin Atsiri & Olahan', icon: FlaskConical, email: 'adminatsiri@polinela.ac.id', pass: 'admin123', color: 'btn-outline-dark' },
-        { role: 'Konsumen', icon: ShoppingCart, email: 'budi@gmail.com', pass: 'konsumen123', color: 'btn-outline-secondary' },
     ];
 
     const fillDemo = (accEmail, accPass) => {
@@ -201,7 +200,7 @@ const Login = () => {
                     <div className="p-3 rounded-3 bg-elevated-subtle border">
                         <div className="d-flex align-items-center justify-content-between mb-2">
                             <span className="small fw-bold text-heading d-flex align-items-center gap-1" style={{ fontSize: '11px' }}>
-                                <Sparkles size={13} className="text-warning" /> Klik Cepat Akun Demo:
+                                <Sparkles size={13} className="text-warning" /> Akun Demo:
                             </span>
                         </div>
                         <div className="d-flex flex-wrap gap-1">

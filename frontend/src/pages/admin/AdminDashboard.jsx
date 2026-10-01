@@ -671,14 +671,14 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
-            {/* Bottom Split Section: Recent Orders & Stock Alert / SUS */}
+            {/* Bottom Split Section: Recent Orders & SUS Usability Card */}
             <div className="row g-4 mb-3">
                 <div className="col-lg-8">
                     <div className="card border-0 shadow-sm rounded-4 p-4 h-100" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
                         <div className="d-flex justify-content-between align-items-center mb-3">
                             <div>
                                 <h6 className="fw-bold mb-0" style={{ color: 'var(--text-heading)' }}>Pesanan Masuk Terbaru</h6>
-                                <small className="text-muted">Transaksi belanja masuk dari seluruh unit perkebunan</small>
+                                <small className="text-muted">Transaksi belanja masuk dari seluruh 4 unit TEFA perkebunan</small>
                             </div>
                             <Link to="/admin/orders" className="btn btn-outline-success btn-sm rounded-pill px-3">
                                 Kelola Semua Pesanan <ArrowRight size={14} />
@@ -727,60 +727,21 @@ const AdminDashboard = () => {
                     </div>
                 </div>
 
-                <div className="col-lg-4 d-flex flex-column gap-3">
-                    <div className="card border-0 shadow-sm rounded-4 p-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
-                        <div className="d-flex justify-content-between align-items-center mb-3">
-                            <h6 className="fw-bold mb-0 d-flex align-items-center gap-2 text-danger">
-                                <AlertTriangle size={17} /> Peringatan Stok Menipis
-                            </h6>
-                            <Link to="/admin/products" className="text-success small fw-semibold text-decoration-none">
-                                Kelola
-                            </Link>
-                        </div>
-
-                        {!low_stock_products || low_stock_products.length === 0 ? (
-                            <div className="text-center py-3 text-muted small">Semua stok produk dalam kondisi aman (&gt; 10 unit).</div>
-                        ) : (
-                            <div className="d-flex flex-column gap-2">
-                                {low_stock_products.map((p) => (
-                                    <div key={p.id} className="p-2.5 border rounded-3 d-flex justify-content-between align-items-center small bg-light">
-                                        <div className="text-truncate flex-grow-1 pe-2" style={{ maxWidth: '140px' }}>
-                                            <div className="fw-semibold text-truncate text-dark" title={p.nama_produk}>{p.nama_produk}</div>
-                                            <small className="text-muted">{p.unit?.nama_unit || 'Unit TEFA'}</small>
-                                        </div>
-                                        <div className="d-flex align-items-center gap-1.5 flex-shrink-0">
-                                            <span className="badge bg-danger rounded-pill px-2 py-1" style={{ fontSize: '10.5px' }}>
-                                                {p.stok || p.total_stok || 0} {p.satuan || 'Pcs'}
-                                            </span>
-                                            <button
-                                                onClick={() => handleQuickStock(p)}
-                                                className="btn btn-sm btn-outline-success rounded-pill px-2 py-0.5 d-inline-flex align-items-center gap-1"
-                                                style={{ fontSize: '10.5px' }}
-                                                title="Sesuaikan Stok Produk"
-                                            >
-                                                <Zap size={11} /> Restok
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="card border-0 shadow-sm rounded-4 p-3.5 text-center bg-white">
+                <div className="col-lg-4">
+                    <div className="card border-0 shadow-sm rounded-4 p-4 h-100 text-center d-flex flex-column justify-content-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
                         <div className="d-flex align-items-center justify-content-center gap-2 mb-2">
-                            <Award size={18} className="text-warning" />
-                            <h6 className="fw-bold mb-0 text-dark">Evaluasi Usability (SUS)</h6>
+                            <Award size={22} className="text-warning" />
+                            <h6 className="fw-bold mb-0" style={{ color: 'var(--text-heading)' }}>Evaluasi Usability (SUS)</h6>
                         </div>
-                        <div className="display-6 fw-bold text-success mb-1">
+                        <div className="display-5 fw-bold text-success mb-1">
                             {sus_score || '82.5'}
                         </div>
-                        <span className="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1 mx-auto small">
+                        <span className="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1.5 mx-auto small fw-semibold">
                             Grade A (Excellent Usability)
                         </span>
-                        <small className="text-muted mt-2 d-block" style={{ fontSize: '11px' }}>
-                            Hasil survei antarmuka pengguna civitas akademika Polinela.
-                        </small>
+                        <p className="text-muted mt-3 mb-0 small" style={{ fontSize: '11.5px' }}>
+                            Skor kepuasan antarmuka pengguna berdasarkan 10 instrumen kuesioner System Usability Scale civitas akademika Polinela.
+                        </p>
                     </div>
                 </div>
             </div>

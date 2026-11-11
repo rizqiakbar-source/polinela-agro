@@ -19,6 +19,8 @@ class Order extends Model
         'grand_total',
         'status',
         'catatan',
+        'snap_token',
+        'snap_order_id',
     ];
 
     protected $casts = [

@@ -30,7 +30,8 @@ const SalesAnalyticsOverview = ({
     unitStats = [],
     roleTitle = 'Store Overview',
     roleSubtitle = "Here's how your store is performing today",
-    onQuickStock = null
+    onQuickStock = null,
+    isReadOnly = false
 }) => {
     const [viewMode, setViewMode] = useState('daily'); // 'daily' | 'monthly'
     const [hoveredPoint, setHoveredPoint] = useState(null);
@@ -952,11 +953,13 @@ const SalesAnalyticsOverview = ({
                     <div className="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
                         <div className="d-flex justify-content-between align-items-center mb-3">
                             <div>
-                                <h6 className="fw-bold text-dark mb-0">Kontribusi Unit TEFA</h6>
+                                <h6 className="fw-bold text-dark mb-0">
+                                    {unitStats?.length === 1 ? 'Performa Unit Toko Anda' : 'Kontribusi Unit TEFA'}
+                                </h6>
                                 <small className="text-muted" style={{ fontSize: '11px' }}>Realisasi Omset vs Target</small>
                             </div>
                             <span className="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1 small" style={{ fontSize: '10.5px' }}>
-                                4 Unit Usaha
+                                {unitStats?.length || 0} Unit Usaha
                             </span>
                         </div>
 
@@ -1092,7 +1095,13 @@ const SalesAnalyticsOverview = ({
                             )}
                         </div>
 
-                        {lowStockProducts && lowStockProducts.length > 0 && onQuickStock ? (
+                        {isReadOnly ? (
+                            <div className="text-center mt-2">
+                                <span className="badge bg-light text-muted border rounded-pill px-3 py-1.5" style={{ fontSize: '11px' }}>
+                                    Pemantauan Eksekutif (Read-Only)
+                                </span>
+                            </div>
+                        ) : lowStockProducts && lowStockProducts.length > 0 && onQuickStock ? (
                             <div className="d-flex gap-2 mt-2">
                                 <button 
                                     onClick={() => onQuickStock(lowStockProducts[0])}

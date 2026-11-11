@@ -44,6 +44,7 @@ Route::get('/units/{slugOrId}', [UnitController::class, 'show']);
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/banners', [BannerController::class, 'index']);
 Route::get('/settings/public', [BannerController::class, 'settings']);
+Route::get('/ongkir', [\App\Http\Controllers\Api\Admin\OngkirController::class, 'index']);
 
 /*
 |--------------------------------------------------------------------------
@@ -141,6 +142,9 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::get('/reports', [AdminReportController::class, 'index']);
     Route::get('/reports/sales', [AdminReportController::class, 'index']);
 
+    // Audit Log Aktivitas (Read-Only untuk Superadmin & Pimpinan; Admin Unit diblokir di controller)
+    Route::get('/logs', [\App\Http\Controllers\Api\Admin\LogController::class, 'index']);
+
     // Manajemen Master & Pengaturan (Khusus Superadmin)
     Route::middleware('admin:superadmin')->group(function () {
         Route::get('/users', [AdminUserController::class, 'index']);
@@ -159,9 +163,6 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
         // Backup Database
         Route::get('/backup', [\App\Http\Controllers\Api\Admin\BackupController::class, 'index']);
         Route::post('/backup/create', [\App\Http\Controllers\Api\Admin\BackupController::class, 'create']);
-
-        // Audit Log Aktivitas
-        Route::get('/logs', [\App\Http\Controllers\Api\Admin\LogController::class, 'index']);
 
         // Mutasi Master Unit Usaha TEFA
         Route::post('/units', [\App\Http\Controllers\Api\Admin\UnitController::class, 'store']);

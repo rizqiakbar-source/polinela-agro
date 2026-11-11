@@ -85,8 +85,10 @@ class CheckoutController extends Controller
         
         $bank = ($metodeBayar === 'midtrans') ? 'Midtrans (VA / QRIS / E-Wallet)' : ($request->get('bank') ?? 'Bank Mandiri (114-00-1234567-8)');
         $kurirOption = $request->get('ekspedisi') ?? $request->get('shipping_option') ?? 'kurir_polinela';
-        $voucherCode = trim($request->get('kode_voucher') ?? $request->get('voucher_kode') ?? '');
+        $voucherCode = trim($request->get('kode_voucher') ?? $request->get('voucher_kode') ?? $request->get('kode') ?? '');
+        $voucherId = $request->get('voucher_id');
         $catatan = $request->get('catatan_pembeli') ?? $request->get('catatan') ?? null;
+        $resolvedShipping = $this->resolveShippingOption($request, (string) $kurirOption);
 
         if (empty($penerimaNama) || empty($penerimaHp) || empty($alamatLengkap)) {
             return response()->json([
@@ -185,34 +187,48 @@ class CheckoutController extends Controller
 
             $numUnits = count($unitGroups);
 
-            // Tarif Ongkir per unit
-            $ongkirPerUnit = ($kurirOption === 'ambil_sendiri') ? 0 : 10000;
+            // Tarif Ongkir per unit dari konfigurasi shipping_rates (/admin/ongkir)
+            $ongkirPerUnit = $resolvedShipping['tarif'];
             $totalOngkir = $ongkirPerUnit * $numUnits;
 
-            // Diskon Voucher (Atomic & aman dalam transaksi)
+            // Diskon Voucher (Atomic & aman dalam transaksi; menerima kode_voucher maupun voucher_id)
             $totalDiskon = 0;
-            if (!empty($voucherCode)) {
-                $voucher = Voucher::where('kode', strtoupper($voucherCode))
-                    ->where('is_active', true)
-                    ->lockForUpdate()
-                    ->first();
-
-                if ($voucher) {
-                    [$valid, $diskon, $msg] = $voucher->calculateDiscount($overallSubtotal);
-                    if (!$valid) {
-                        DB::rollBack();
-                        return response()->json(['status' => 'error', 'success' => false, 'message' => $msg], 400);
-                    }
-                    $totalDiskon = $diskon;
-                    $voucher->increment('terpakai');
+            if (!empty($voucherCode) || !empty($voucherId)) {
+                $voucherQuery = Voucher::where('is_active', true);
+                if (!empty($voucherCode)) {
+                    $voucherQuery->where('kode', strtoupper($voucherCode));
+                } else {
+                    $voucherQuery->where('id', $voucherId);
                 }
+                $voucher = $voucherQuery->lockForUpdate()->first();
+
+                if (!$voucher) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status'  => 'error',
+                        'success' => false,
+                        'message' => 'Voucher tidak ditemukan atau sudah tidak aktif.',
+                    ], 400);
+                }
+
+                [$valid, $diskon, $msg] = $voucher->calculateDiscount($overallSubtotal);
+                if (!$valid) {
+                    DB::rollBack();
+                    return response()->json(['status' => 'error', 'success' => false, 'message' => $msg], 400);
+                }
+                $totalDiskon = $diskon;
+                $voucherCode = $voucher->kode;
+                $voucher->increment('terpakai');
             }
 
             $sharedTrxNumber = 'TRX-' . strtoupper(Str::random(8));
             $createdOrders = [];
             $createdOrderModels = [];
+            $unitIndex = 0;
+            $allocatedDiskon = 0;
 
             foreach ($unitGroups as $uId => $groupItems) {
+                $unitIndex++;
                 $unitSubtotal = 0;
                 $unitBerat = 0;
                 foreach ($groupItems as $it) {
@@ -223,8 +239,14 @@ class CheckoutController extends Controller
                     $unitBerat += ($beratItem * $it->qty);
                 }
 
-                $ratio = $overallSubtotal > 0 ? ($unitSubtotal / $overallSubtotal) : (1 / $numUnits);
-                $unitDiskon = round($totalDiskon * $ratio);
+                // Pastikan jumlah diskon seluruh sub-order tepat sama dengan $totalDiskon
+                if ($unitIndex === $numUnits) {
+                    $unitDiskon = max(0, $totalDiskon - $allocatedDiskon);
+                } else {
+                    $ratio = $overallSubtotal > 0 ? ($unitSubtotal / $overallSubtotal) : (1 / $numUnits);
+                    $unitDiskon = round($totalDiskon * $ratio);
+                    $allocatedDiskon += $unitDiskon;
+                }
                 $unitOngkir = $ongkirPerUnit;
                 $unitGrandTotal = max(0, ($unitSubtotal + $unitOngkir - $unitDiskon));
 
@@ -291,10 +313,10 @@ class CheckoutController extends Controller
                 Shipping::create([
                     'order_id'         => $order->id,
                     'kurir'            => $kurirOption,
-                    'layanan'          => 'Reguler Kampus',
+                    'layanan'          => $resolvedShipping['layanan'],
                     'no_resi'          => null,
                     'ongkir'           => $unitOngkir,
-                    'estimasi'         => '1-2 hari',
+                    'estimasi'         => $resolvedShipping['estimasi'],
                     'penerima_nama'    => $penerimaNama,
                     'penerima_telepon' => $penerimaHp,
                     'alamat_lengkap'   => $alamatLengkap,
@@ -380,5 +402,86 @@ class CheckoutController extends Controller
                 'message' => 'Terjadi kesalahan sistem saat memproses pesanan: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Resolve tarif, nama layanan, dan estimasi ongkir dari konfigurasi settings `shipping_rates`
+     * dengan fallback aman untuk kode kurir lama (`ambil_sendiri`, `kurir_polinela`, `jne`).
+     */
+    private function resolveShippingOption(Request $request, string $kurirOption): array
+    {
+        $setting = Setting::where('setting_key', 'shipping_rates')->first();
+        $rates = $setting ? json_decode($setting->setting_value, true) : null;
+        if (!is_array($rates) || empty($rates)) {
+            $rates = [
+                ['id' => '1', 'wilayah' => 'Ambil di Tefa Polinela (Gratis)', 'tarif' => 0, 'estimasi' => 'Langsung ambil di kampus'],
+                ['id' => '2', 'wilayah' => 'Kurir Kampus (Lingkungan Polinela / Rajabasa)', 'tarif' => 5000, 'estimasi' => 'Hari yang sama'],
+                ['id' => '3', 'wilayah' => 'Bandar Lampung (Kota)', 'tarif' => 12000, 'estimasi' => '1 hari'],
+                ['id' => '4', 'wilayah' => 'Luar Kota / Luar Provinsi (JNE/SiCepat)', 'tarif' => 25000, 'estimasi' => '2-3 hari'],
+            ];
+        }
+
+        $matched = null;
+        $rateIndex = $request->input('shipping_rate_index');
+        if ($rateIndex !== null && is_numeric($rateIndex) && isset($rates[(int) $rateIndex])) {
+            $matched = $rates[(int) $rateIndex];
+        }
+
+        if (!$matched && $request->filled('shipping_rate_id')) {
+            $rateId = (string) $request->input('shipping_rate_id');
+            foreach ($rates as $idx => $r) {
+                if ((string) ($r['id'] ?? ($idx + 1)) === $rateId) {
+                    $matched = $r;
+                    break;
+                }
+            }
+        }
+
+        $norm = strtolower($kurirOption);
+        if (!$matched && preg_match('/^zone_(\d+)$/', $norm, $m) && isset($rates[(int) $m[1]])) {
+            $matched = $rates[(int) $m[1]];
+        }
+
+        if (!$matched) {
+            if ($norm === 'ambil_sendiri') {
+                foreach ($rates as $r) {
+                    if ((float) ($r['tarif'] ?? 0) == 0 || str_contains(strtolower($r['wilayah'] ?? ''), 'ambil')) {
+                        $matched = $r;
+                        break;
+                    }
+                }
+                if (!$matched) {
+                    return ['tarif' => 0.0, 'layanan' => 'Ambil Sendiri di Unit TEFA', 'estimasi' => 'Langsung ambil di kampus'];
+                }
+            } elseif (str_contains($norm, 'jne') || str_contains($norm, 'luar')) {
+                foreach ($rates as $r) {
+                    $w = strtolower($r['wilayah'] ?? '');
+                    if (str_contains($w, 'jne') || str_contains($w, 'sicepat') || str_contains($w, 'luar')) {
+                        $matched = $r;
+                        break;
+                    }
+                }
+                if (!$matched) {
+                    return ['tarif' => 25000.0, 'layanan' => 'Luar Kota / Ekspedisi (JNE/SiCepat)', 'estimasi' => '2-3 hari'];
+                }
+            } else {
+                foreach ($rates as $r) {
+                    $w = strtolower($r['wilayah'] ?? '');
+                    if (str_contains($w, 'bandar lampung') || str_contains($w, 'kurir kampus')) {
+                        $matched = $r;
+                        break;
+                    }
+                }
+                if (!$matched) {
+                    return ['tarif' => 10000.0, 'layanan' => 'Kurir Polinela Express', 'estimasi' => '1-2 hari'];
+                }
+            }
+        }
+
+        return [
+            'tarif'    => max(0.0, (float) ($matched['tarif'] ?? 0)),
+            'layanan'  => (string) ($matched['wilayah'] ?? 'Reguler Kampus'),
+            'estimasi' => (string) ($matched['estimasi'] ?? '1-2 hari'),
+        ];
     }
 }

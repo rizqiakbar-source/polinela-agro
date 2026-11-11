@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -30,6 +30,11 @@ import {
 const AdminSidebar = ({ isOpen = false, onClose = () => {} }) => {
     const { user, isSuperadmin, isAdminUnit, isPimpinan, logout } = useAuth();
     const { isDark, toggleTheme } = useTheme();
+    const [avatarErr, setAvatarErr] = useState(false);
+
+    useEffect(() => {
+        setAvatarErr(false);
+    }, [user?.foto_url]);
 
     return (
         <div 
@@ -81,8 +86,13 @@ const AdminSidebar = ({ isOpen = false, onClose = () => {} }) => {
             {/* User Unit Info Badge */}
             <div className="admin-sidebar-user-card p-3 mb-3 rounded-3">
                 <div className="d-flex align-items-center gap-2 mb-1">
-                    {user?.foto_url ? (
-                        <img src={user.foto_url} alt="" style={{ width: '34px', height: '34px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #4ade80' }} />
+                    {user?.foto_url && !avatarErr ? (
+                        <img
+                            src={user.foto_url}
+                            alt=""
+                            onError={() => setAvatarErr(true)}
+                            style={{ width: '34px', height: '34px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #4ade80' }}
+                        />
                     ) : (
                         <div className="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style={{ width: '34px', height: '34px', fontSize: '13px', background: 'linear-gradient(135deg, #22c55e 0%, #15803d 100%)', border: '2px solid rgba(255,255,255,0.2)' }}>
                             {(user?.nama_lengkap || user?.nama || 'U')[0].toUpperCase()}

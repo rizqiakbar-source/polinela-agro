@@ -157,6 +157,8 @@ class DashboardController extends Controller
 
         // Recent Customer Reviews
         $recentReviews = \App\Models\Review::with(['user', 'product'])
+            ->where('status', 'approved')
+            ->when($role === 'admin_unit' && $unitId, fn($q) => $q->whereHas('product', fn($pq) => $pq->where('unit_id', $unitId)))
             ->orderBy('id', 'desc')
             ->limit(3)
             ->get()
@@ -166,15 +168,16 @@ class DashboardController extends Controller
                     'user_name' => $r->user?->nama ?: ($r->user?->username ?: 'Pelanggan Polinela'),
                     'product_name' => $r->product?->nama_produk ?: 'Produk Riset TEFA',
                     'rating' => $r->rating ?: 5,
-                    'comment' => $r->ulasan ?: 'Kualitas produk sangat memuaskan, kemasan rapi dan pengiriman cepat!',
+                    'comment' => $r->komentar ?: 'Kualitas produk sangat memuaskan, kemasan rapi dan pengiriman cepat!',
                     'created_at' => $r->created_at ? $r->created_at->diffForHumans() : 'Baru saja',
                 ];
             });
 
 
 
-        // Performa per Unit TEFA (Kopi, Kakao, Lada, Atsiri)
+        // Performa per Unit TEFA (Pimpinan & Superadmin melihat 4 unit; Admin Unit hanya unitnya)
         $unitStats = Unit::withCount(['products' => fn($q) => $q->whereNull('deleted_at')])
+            ->when($role === 'admin_unit' && $unitId, fn($q) => $q->where('id', $unitId))
             ->get()
             ->map(function ($u) use ($validStatus) {
                 $omset = Order::where('unit_id', $u->id)

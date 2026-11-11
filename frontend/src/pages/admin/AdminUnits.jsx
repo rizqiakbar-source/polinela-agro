@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import client from '../../api/client';
+import { useAuth } from '../../context/AuthContext';
 import { Store, Plus, Edit2, Trash2, Search } from 'lucide-react';
 
 const AdminUnits = () => {
+    const { isPimpinan } = useAuth();
     const [units, setUnits] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -105,9 +107,15 @@ const AdminUnits = () => {
                     </h3>
                     <p className="text-muted small mb-0">Manajemen unit Teaching Factory perkebunan Polinela</p>
                 </div>
-                <button onClick={openCreateModal} className="btn btn-agro d-flex align-items-center gap-2">
-                    <Plus size={18} /> Tambah Unit TEFA
-                </button>
+                {!isPimpinan ? (
+                    <button onClick={openCreateModal} className="btn btn-agro d-flex align-items-center gap-2">
+                        <Plus size={18} /> Tambah Unit TEFA
+                    </button>
+                ) : (
+                    <span className="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 rounded-pill px-3 py-2">
+                        Mode Pantau Eksekutif (Read-Only)
+                    </span>
+                )}
             </div>
 
             {/* Search Bar */}
@@ -156,14 +164,16 @@ const AdminUnits = () => {
                                     <div><strong>Total Produk:</strong> {unit.products_count || 0} produk</div>
                                 </div>
 
-                                <div className="d-flex justify-content-end gap-2 mt-3 pt-2 border-top">
-                                    <button onClick={() => openEditModal(unit)} className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1 rounded-pill px-3">
-                                        <Edit2 size={14} /> Edit
-                                    </button>
-                                    <button onClick={() => handleDelete(unit.id, unit.nama_unit)} className="btn btn-sm btn-outline-danger d-flex align-items-center gap-1 rounded-pill px-3">
-                                        <Trash2 size={14} /> Hapus
-                                    </button>
-                                </div>
+                                {!isPimpinan && (
+                                    <div className="d-flex justify-content-end gap-2 mt-3 pt-2 border-top">
+                                        <button onClick={() => openEditModal(unit)} className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1 rounded-pill px-3">
+                                            <Edit2 size={14} /> Edit
+                                        </button>
+                                        <button onClick={() => handleDelete(unit.id, unit.nama_unit)} className="btn btn-sm btn-outline-danger d-flex align-items-center gap-1 rounded-pill px-3">
+                                            <Trash2 size={14} /> Hapus
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}

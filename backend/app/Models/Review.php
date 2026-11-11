@@ -10,18 +10,29 @@ class Review extends Model
 
     protected $fillable = [
         'product_id',
+        'order_id',
         'user_id',
         'rating',
-        'ulasan',
-        'is_published',
+        'komentar',
+        'status',
+        'reply',
     ];
 
     protected $casts = [
-        'product_id'   => 'integer',
-        'user_id'      => 'integer',
-        'rating'       => 'integer',
-        'is_published' => 'boolean',
+        'product_id' => 'integer',
+        'order_id'   => 'integer',
+        'user_id'    => 'integer',
+        'rating'     => 'integer',
     ];
+
+    protected $appends = [
+        'ulasan',
+    ];
+
+    public function getUlasanAttribute()
+    {
+        return $this->komentar;
+    }
 
     public function product()
     {

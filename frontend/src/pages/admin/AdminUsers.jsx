@@ -59,8 +59,8 @@ const AdminUsers = () => {
         if (user) {
             setEditingUser(user);
             setFormData({
-                username: user.username,
-                nama_lengkap: user.nama_lengkap || '',
+                username: user.username || user.email?.split('@')[0] || '',
+                nama_lengkap: user.nama_lengkap || user.nama || '',
                 email: user.email,
                 password: '',
                 role: user.role,
@@ -203,8 +203,12 @@ const AdminUsers = () => {
                                 {users.map((u) => (
                                     <tr key={u.id}>
                                         <td>
-                                            <div className="fw-bold text-dark">{u.nama_lengkap || u.username}</div>
-                                            <small className="text-muted">@{u.username}</small>
+                                            <div className="fw-bold text-dark">{u.nama_lengkap || u.nama || u.username || '-'}</div>
+                                            {u.username ? (
+                                                <small className="text-muted">@{u.username}</small>
+                                            ) : (
+                                                <small className="text-muted">ID #{u.id}</small>
+                                            )}
                                         </td>
                                         <td>
                                             <div>{u.email}</div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -12,6 +12,11 @@ const Navbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [searchQuery, setSearchQuery] = useState('');
+    const [avatarErr, setAvatarErr] = useState(false);
+
+    useEffect(() => {
+        setAvatarErr(false);
+    }, [user?.foto_url]);
 
     const handleSearch = (e) => {
         e.preventDefault();
@@ -153,8 +158,8 @@ const Navbar = () => {
                                         data-bs-toggle="dropdown"
                                         aria-expanded="false"
                                     >
-                                        {user.foto_url ? (
-                                            <img src={user.foto_url} alt="" style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} />
+                                        {user.foto_url && !avatarErr ? (
+                                            <img src={user.foto_url} alt="" onError={() => setAvatarErr(true)} style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} />
                                         ) : (
                                             <div className="rounded-circle d-flex align-items-center justify-content-center text-white" style={{ width: '28px', height: '28px', fontSize: '13px', background: 'var(--gradient-primary)' }}>
                                                 {(user.nama_lengkap || user.nama || 'U')[0].toUpperCase()}

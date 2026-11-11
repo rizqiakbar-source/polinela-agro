@@ -20,9 +20,34 @@ const Checkout = () => {
     const [alamat, setAlamat] = useState(user?.alamat || '');
     const [kota, setKota] = useState('Bandar Lampung');
     const [kodePos, setKodePos] = useState('35144');
-    const [kurir, setKurir] = useState('kurir_polinela');
+    const DEFAULT_RATES = [
+        { id: '1', wilayah: 'Ambil di Tefa Polinela (Gratis)', tarif: 0, estimasi: 'Langsung ambil di kampus' },
+        { id: '2', wilayah: 'Kurir Kampus (Lingkungan Polinela / Rajabasa)', tarif: 5000, estimasi: 'Hari yang sama' },
+        { id: '3', wilayah: 'Bandar Lampung (Kota)', tarif: 12000, estimasi: '1 hari' },
+        { id: '4', wilayah: 'Luar Kota / Luar Provinsi (JNE/SiCepat)', tarif: 25000, estimasi: '2-3 hari' },
+    ];
+
+    const [shippingRates, setShippingRates] = useState(DEFAULT_RATES);
+    const [selectedRateIdx, setSelectedRateIdx] = useState(2); // Default: Bandar Lampung (Kota)
     const [metodePembayaran, setMetodePembayaran] = useState('midtrans');
     const [bankPilihan, setBankPilihan] = useState('Bank Mandiri');
+
+    useEffect(() => {
+        let active = true;
+        client.get('/ongkir')
+            .then((res) => {
+                const list = res.data?.data;
+                if (active && Array.isArray(list) && list.length > 0) {
+                    setShippingRates(list);
+                    const defaultIdx = list.findIndex((r) => Number(r.tarif) > 0 && /bandar lampung|kurir/i.test(r.wilayah || ''));
+                    setSelectedRateIdx(defaultIdx >= 0 ? defaultIdx : (list.length > 1 ? 1 : 0));
+                }
+            })
+            .catch(() => {
+                // Gunakan fallback DEFAULT_RATES jika endpoint belum merespons
+            });
+        return () => { active = false; };
+    }, []);
 
     // Auto sync when user object loads or updates
     useEffect(() => {
@@ -45,8 +70,17 @@ const Checkout = () => {
 
     const [submitting, setSubmitting] = useState(false);
 
-    // Shipping cost calculation (e.g. standard flat per unit)
-    const ongkirPerUnit = kurir === 'ambil_sendiri' ? 0 : 10000;
+    const selectedRate = shippingRates[selectedRateIdx] || shippingRates[0] || DEFAULT_RATES[0];
+    const deriveKurirSlug = (rate) => {
+        const w = (rate?.wilayah || '').toLowerCase();
+        if (Number(rate?.tarif || 0) === 0 || w.includes('ambil')) return 'ambil_sendiri';
+        if (w.includes('jne') || w.includes('sicepat') || w.includes('j&t') || w.includes('luar')) return 'jne';
+        return 'kurir_polinela';
+    };
+    const kurir = deriveKurirSlug(selectedRate);
+
+    // Tarif ongkir dihitung dinamis dari pengaturan zona pengiriman (/admin/ongkir)
+    const ongkirPerUnit = Math.max(0, Number(selectedRate?.tarif || 0));
     const totalOngkir = (cartGroups?.length || 1) * ongkirPerUnit;
     const subtotal = cartSummary?.subtotal || 0;
     const grandTotal = Math.max(0, subtotal + totalOngkir - voucherDiscount);
@@ -109,10 +143,12 @@ const Checkout = () => {
                 kota: kota,
                 kode_pos: kodePos,
                 ekspedisi: kurir,
+                shipping_rate_index: selectedRateIdx,
+                shipping_rate_id: selectedRate?.id ?? String(selectedRateIdx + 1),
                 metode_pembayaran: metodePembayaran,
                 bank: metodePembayaran === 'transfer_bank' ? bankPilihan : null,
+                kode_voucher: appliedVoucher ? (appliedVoucher.kode || appliedVoucher.kode_voucher || voucherCode.trim().toUpperCase()) : null,
                 voucher_id: appliedVoucher ? appliedVoucher.id : null,
-                diskon: voucherDiscount,
                 catatan_pembeli: `Pesanan Multi-Store Polinela Agro (${cartGroups.length} unit)`,
             };
 
@@ -328,38 +364,35 @@ const Checkout = () => {
                                     <Truck size={20} className="text-success" /> Metode Pengiriman
                                 </h5>
                                 <div className="d-flex flex-column gap-2">
-                                    <div className={`p-3 border rounded-3 d-flex align-items-center justify-content-between cursor-pointer ${kurir === 'kurir_polinela' ? 'border-success bg-light' : ''}`} onClick={() => setKurir('kurir_polinela')}>
-                                        <div className="d-flex align-items-center gap-3">
-                                            <input type="radio" name="kurir" checked={kurir === 'kurir_polinela'} onChange={() => setKurir('kurir_polinela')} />
-                                            <div>
-                                                <div className="fw-bold text-dark">Kurir Polinela Express (Lokal Bandar Lampung)</div>
-                                                <small className="text-muted">Estimasi tiba hari yang sama atau 1 hari kerja</small>
+                                    {shippingRates.map((rate, idx) => {
+                                        const rateTarif = Math.max(0, Number(rate.tarif || 0));
+                                        const unitCount = cartGroups?.length || 1;
+                                        const rateTotal = rateTarif * unitCount;
+                                        const isSelected = selectedRateIdx === idx;
+                                        return (
+                                            <div
+                                                key={rate.id || idx}
+                                                className={`p-3 border rounded-3 d-flex align-items-center justify-content-between cursor-pointer ${isSelected ? 'border-success bg-light' : ''}`}
+                                                onClick={() => setSelectedRateIdx(idx)}
+                                            >
+                                                <div className="d-flex align-items-center gap-3">
+                                                    <input type="radio" name="kurir" checked={isSelected} onChange={() => setSelectedRateIdx(idx)} />
+                                                    <div>
+                                                        <div className="fw-bold text-dark">{rate.wilayah}</div>
+                                                        <small className="text-muted">
+                                                            Estimasi: {rate.estimasi || '1-2 hari'}
+                                                            {rateTarif > 0 && unitCount > 1 ? ` • ${formatRupiah(rateTarif)}/unit` : ''}
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                                {rateTarif === 0 ? (
+                                                    <span className="badge bg-success">Gratis</span>
+                                                ) : (
+                                                    <span className="fw-bold text-success text-nowrap">{formatRupiah(rateTotal)}</span>
+                                                )}
                                             </div>
-                                        </div>
-                                        <span className="fw-bold text-success">{formatRupiah(10000 * (cartGroups?.length || 1))}</span>
-                                    </div>
-
-                                    <div className={`p-3 border rounded-3 d-flex align-items-center justify-content-between cursor-pointer ${kurir === 'jne' ? 'border-success bg-light' : ''}`} onClick={() => setKurir('jne')}>
-                                        <div className="d-flex align-items-center gap-3">
-                                            <input type="radio" name="kurir" checked={kurir === 'jne'} onChange={() => setKurir('jne')} />
-                                            <div>
-                                                <div className="fw-bold text-dark">JNE Regular / J&T Express</div>
-                                                <small className="text-muted">Estimasi tiba 2-3 hari kerja (Luar Kota)</small>
-                                            </div>
-                                        </div>
-                                        <span className="fw-bold text-success">{formatRupiah(15000 * (cartGroups?.length || 1))}</span>
-                                    </div>
-
-                                    <div className={`p-3 border rounded-3 d-flex align-items-center justify-content-between cursor-pointer ${kurir === 'ambil_sendiri' ? 'border-success bg-light' : ''}`} onClick={() => setKurir('ambil_sendiri')}>
-                                        <div className="d-flex align-items-center gap-3">
-                                            <input type="radio" name="kurir" checked={kurir === 'ambil_sendiri'} onChange={() => setKurir('ambil_sendiri')} />
-                                            <div>
-                                                <div className="fw-bold text-dark">Ambil Langsung di Kebun Praktikum Polinela</div>
-                                                <small className="text-muted">Gratis tanpa ongkos kirim</small>
-                                            </div>
-                                        </div>
-                                        <span className="badge bg-success">Gratis</span>
-                                    </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
 
@@ -420,7 +453,7 @@ const Checkout = () => {
                                 </div>
                                 {appliedVoucher && (
                                     <div className="p-2 bg-success bg-opacity-10 text-success rounded-3 small d-flex align-items-center justify-content-between">
-                                        <span className="d-inline-flex align-items-center gap-1"><Tag size={14} /> Voucher: <strong>{appliedVoucher.kode_voucher}</strong></span>
+                                        <span className="d-inline-flex align-items-center gap-1"><Tag size={14} /> Voucher: <strong>{appliedVoucher.kode || appliedVoucher.kode_voucher}</strong></span>
                                         <span className="fw-bold">-{formatRupiah(voucherDiscount)}</span>
                                     </div>
                                 )}

@@ -325,7 +325,7 @@ const DetailProduk = () => {
                                             ))}
                                         </div>
                                     </div>
-                                    <p className="small text-secondary mb-0">{rev.ulasan}</p>
+                                    <p className="small text-secondary mb-0">{rev.komentar || rev.ulasan}</p>
                                 </div>
                             ))}
                         </div>

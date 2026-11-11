@@ -29,6 +29,7 @@ const DetailPesanan = () => {
             const res = await client.get(`/orders/${id}`);
             if (res.data.status === 'success') {
                 let orderData = res.data.data.order;
+                let siblingsData = res.data.data.sibling_orders || [];
 
                 // Jika status masih menunggu pembayaran, cek sinkronisasi status ke Midtrans secara otomatis
                 if (orderData.status === 'menunggu_pembayaran') {
@@ -36,6 +37,9 @@ const DetailPesanan = () => {
                         const syncRes = await client.get(`/payment/midtrans/status/${id}`);
                         if (syncRes.data.order && syncRes.data.order.status !== 'menunggu_pembayaran') {
                             orderData = syncRes.data.order;
+                            if (Array.isArray(syncRes.data.sibling_orders)) {
+                                siblingsData = syncRes.data.sibling_orders;
+                            }
                         }
                     } catch (syncErr) {
                         // ignore sync error
@@ -43,7 +47,7 @@ const DetailPesanan = () => {
                 }
 
                 setOrder(orderData);
-                setSiblingOrders(res.data.data.sibling_orders || []);
+                setSiblingOrders(siblingsData);
 
                 // Jika diarahkan langsung dari checkout (autoPay=1), buka otomatis Snap
                 if (
@@ -91,6 +95,9 @@ const DetailPesanan = () => {
                 const syncRes = await client.get(`/payment/midtrans/status/${id}`);
                 if (syncRes.data.order && syncRes.data.order.status !== 'menunggu_pembayaran') {
                     setOrder(syncRes.data.order);
+                    if (Array.isArray(syncRes.data.sibling_orders)) {
+                        setSiblingOrders(syncRes.data.sibling_orders);
+                    }
                     Swal.fire({
                         icon: 'success',
                         title: 'Pembayaran Berhasil Diverifikasi!',
@@ -336,7 +343,7 @@ const DetailPesanan = () => {
                     Swal.showValidationMessage('Silakan tuliskan ulasan Anda!');
                     return false;
                 }
-                return { rating: parseInt(rating), ulasan: ulasan.trim() };
+                return { rating: parseInt(rating), komentar: ulasan.trim(), ulasan: ulasan.trim(), order_id: order?.id };
             }
         });
 
@@ -623,8 +630,50 @@ const DetailPesanan = () => {
                                 <small className="text-muted">Kode Transaksi: <strong>{order.payment?.no_transaksi || '-'}</strong></small>
                             </div>
 
-                            {/* Instant Automated Midtrans Payment Card */}
-                            {isAwaitingPayment ? (
+                            {/* Alert Penolakan Pembayaran & Alasan Penolakan */}
+                            {order.payment?.status === 'ditolak' && order.status !== 'dibatalkan' && (
+                                <div className="p-3 bg-danger bg-opacity-10 border border-danger border-opacity-25 rounded-4 text-start mb-3">
+                                    <div className="d-flex align-items-start gap-2">
+                                        <XCircle size={20} className="text-danger flex-shrink-0 mt-0.5" />
+                                        <div>
+                                            <h6 className="fw-bold text-danger mb-1">Bukti Pembayaran Ditolak</h6>
+                                            <p className="text-dark small mb-1" style={{ fontSize: '12.5px' }}>
+                                                <strong>Alasan Admin Unit:</strong> {order.payment?.catatan || 'Bukti pembayaran tidak valid atau nominal tidak sesuai.'}
+                                            </p>
+                                            <p className="text-muted small mb-0" style={{ fontSize: '11.5px' }}>
+                                                Silakan unggah ulang bukti transfer yang sah di bawah ini atau gunakan pembayaran otomatis Midtrans.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Status Pembayaran Akurat */}
+                            {order.status === 'dibatalkan' ? (
+                                <div className="p-3 bg-danger bg-opacity-10 border border-danger border-opacity-25 rounded-4 text-center">
+                                    <XCircle size={32} className="text-danger mb-2" />
+                                    <h6 className="fw-bold text-danger mb-1">Pesanan Dibatalkan</h6>
+                                    <p className="text-muted small mb-0" style={{ fontSize: '12px' }}>
+                                        {order.payment?.catatan || 'Pesanan ini telah dibatalkan dan pembayaran tidak diperlukan.'}
+                                    </p>
+                                </div>
+                            ) : isPaid ? (
+                                <div className="p-3 bg-light rounded-4 text-center border">
+                                    <CheckCircle2 size={32} className="text-success mb-2" />
+                                    <h6 className="fw-bold text-success mb-1">Pembayaran Terverifikasi (Lunas)</h6>
+                                    <p className="text-muted small mb-0" style={{ fontSize: '12px' }}>
+                                        Pesanan ini telah lunas dan sedang dipersiapkan oleh unit pengelola toko.
+                                    </p>
+                                </div>
+                            ) : order.status === 'menunggu_verifikasi' || order.payment?.status === 'menunggu_konfirmasi' ? (
+                                <div className="p-3 bg-warning bg-opacity-10 border border-warning border-opacity-50 rounded-4 text-center mb-3">
+                                    <AlertCircle size={32} className="text-warning mb-2" />
+                                    <h6 className="fw-bold text-dark mb-1">Menunggu Verifikasi Admin</h6>
+                                    <p className="text-muted small mb-0" style={{ fontSize: '12px' }}>
+                                        Bukti pembayaran Anda sudah diterima dan sedang diperiksa oleh admin unit toko.
+                                    </p>
+                                </div>
+                            ) : (
                                 <div className="p-3 bg-success bg-opacity-10 border border-success border-opacity-25 rounded-4 text-center mb-3">
                                     <div className="d-flex align-items-center justify-content-center gap-2 mb-2">
                                         <Zap size={20} className="text-warning fill-warning" />
@@ -654,18 +703,10 @@ const DetailPesanan = () => {
                                         ) : (
                                             <>
                                                 <Zap size={18} className="text-warning fill-warning" />
-                                                <span>Bayar Sekarang via Midtrans</span>
+                                                <span>Bayar Sekarang ({formatRupiah(combinedTotal)})</span>
                                             </>
                                         )}
                                     </button>
-                                </div>
-                            ) : (
-                                <div className="p-3 bg-light rounded-4 text-center border">
-                                    <CheckCircle2 size={32} className="text-success mb-2" />
-                                    <h6 className="fw-bold text-success mb-1">Pembayaran Terverifikasi (Lunas)</h6>
-                                    <p className="text-muted small mb-0" style={{ fontSize: '12px' }}>
-                                        Pesanan ini telah lunas dan sedang dipersiapkan oleh unit pengelola toko.
-                                    </p>
                                 </div>
                             )}
 

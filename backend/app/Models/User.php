@@ -20,7 +20,6 @@ class User extends Authenticatable
         'no_hp',
         'role',
         'foto',
-        'avatar',
         'unit_id',
         'alamat',
         'is_active',
@@ -40,10 +39,15 @@ class User extends Authenticatable
 
     public function getFotoUrlAttribute()
     {
-        $foto = $this->foto ?? $this->avatar;
-        if (!$foto) return null;
+        $foto = $this->foto;
+        if (!$foto || $foto === 'default-avatar.png') {
+            return null;
+        }
         if (str_starts_with($foto, 'http://') || str_starts_with($foto, 'https://')) {
             return $foto;
+        }
+        if (!file_exists(public_path('uploads/avatars/' . $foto))) {
+            return null;
         }
         return url('uploads/avatars/' . $foto);
     }

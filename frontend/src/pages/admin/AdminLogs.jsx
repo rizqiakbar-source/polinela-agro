@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import client from '../../api/client';
-import { History, Search } from 'lucide-react';
+import { History, Search, AlertTriangle, RefreshCw } from 'lucide-react';
 import { formatDate } from '../../utils/format';
 
 const AdminLogs = () => {
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
 
     const fetchLogs = async () => {
         setLoading(true);
+        setError(null);
         try {
             const res = await client.get('/admin/logs');
             if (res.data.status === 'success') {
@@ -18,6 +20,7 @@ const AdminLogs = () => {
             }
         } catch (err) {
             console.error('Failed to load logs:', err);
+            setError(err.response?.data?.message || 'Gagal memuat audit log aktivitas. Silakan coba lagi.');
         } finally {
             setLoading(false);
         }
@@ -102,6 +105,20 @@ const AdminLogs = () => {
                                 <tr>
                                     <td colSpan="6" className="text-center py-4">
                                         <div className="spinner-border text-success" role="status"></div>
+                                    </td>
+                                </tr>
+                            ) : error ? (
+                                <tr>
+                                    <td colSpan="6" className="text-center py-4">
+                                        <div className="d-inline-flex flex-column align-items-center gap-2 text-danger">
+                                            <div className="d-flex align-items-center gap-2 fw-semibold">
+                                                <AlertTriangle size={18} />
+                                                <span>{error}</span>
+                                            </div>
+                                            <button type="button" onClick={fetchLogs} className="btn btn-sm btn-outline-danger rounded-pill px-3 d-inline-flex align-items-center gap-1">
+                                                <RefreshCw size={13} /> Muat Ulang
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ) : filteredLogs.length === 0 ? (

@@ -48,56 +48,83 @@ class MidtransService
             return null;
         }
 
-        $order->loadMissing(['user', 'shipping', 'details', 'unit']);
+        $order->loadMissing(['user', 'shipping', 'details', 'unit', 'payment']);
 
-        $orderNumber = $order->order_number ?: "ORDER-{$order->id}";
-        // Midtrans requires unique order_id. Append timestamp if retry
-        $midtransOrderId = "{$orderNumber}-" . time();
-
-        $items = [];
-        if ($order->details && count($order->details) > 0) {
-            foreach ($order->details as $d) {
-                $items[] = [
-                    'id'       => (string) ($d->product_id ?? $d->id),
-                    'price'    => (int) $d->harga,
-                    'quantity' => (int) $d->qty,
-                    'name'     => mb_strimwidth($d->nama_produk ?? 'Produk Pertanian', 0, 45, '...'),
-                ];
+        // Kumpulkan seluruh sub-order dalam 1 transaksi (multi-unit checkout berbagi no_transaksi TRX-...)
+        $sharedTrx = $order->payment?->no_transaksi;
+        $orders = collect([$order]);
+        if (!empty($sharedTrx) && !str_starts_with($sharedTrx, 'PNA-') && !str_starts_with($sharedTrx, 'ORDER-')) {
+            $siblingIds = \App\Models\Payment::where('no_transaksi', $sharedTrx)->pluck('order_id');
+            if ($siblingIds->count() > 1) {
+                $siblingOrders = Order::with(['details', 'shipping', 'unit', 'payment'])
+                    ->whereIn('id', $siblingIds)
+                    ->where('user_id', $order->user_id)
+                    ->where('status', 'menunggu_pembayaran')
+                    ->orderBy('id')
+                    ->get();
+                if ($siblingOrders->isNotEmpty()) {
+                    $orders = $siblingOrders;
+                }
             }
         }
 
-        // Add shipping fee item if any
-        $ongkir = (int) ($order->shipping->ongkir ?? 0);
-        if ($ongkir > 0) {
+        $isConsolidated = $orders->count() > 1;
+        $orderNumber = $order->order_number ?: "ORDER-{$order->id}";
+        $baseIdentifier = ($isConsolidated && !empty($sharedTrx)) ? $sharedTrx : $orderNumber;
+        // Midtrans requires unique order_id (max 50 chars). Append timestamp if retry.
+        $midtransOrderId = "{$baseIdentifier}-" . time();
+
+        $items = [];
+        $totalProductAmount = 0;
+        $totalOngkir = 0;
+        $totalDiskon = 0;
+
+        foreach ($orders as $o) {
+            $unitPrefix = ($isConsolidated && $o->unit) ? '[' . mb_strimwidth($o->unit->nama_unit, 0, 14, '') . '] ' : '';
+            if ($o->details && count($o->details) > 0) {
+                foreach ($o->details as $d) {
+                    $price = (int) round($d->harga);
+                    $qty = (int) $d->qty;
+                    $items[] = [
+                        'id'       => (string) ($d->product_id ?? $d->id),
+                        'price'    => $price,
+                        'quantity' => $qty,
+                        'name'     => mb_strimwidth($unitPrefix . ($d->nama_produk ?? 'Produk Pertanian'), 0, 50, '...'),
+                    ];
+                    $totalProductAmount += ($price * $qty);
+                }
+            }
+            $totalOngkir += (int) round($o->ongkir ?? ($o->shipping->ongkir ?? 0));
+            $totalDiskon += (int) round($o->diskon ?? 0);
+        }
+
+        // Add consolidated shipping fee item if any
+        if ($totalOngkir > 0) {
             $items[] = [
                 'id'       => 'SHIPPING-FEE',
-                'price'    => $ongkir,
+                'price'    => $totalOngkir,
                 'quantity' => 1,
-                'name'     => 'Biaya Ongkir Kurir',
+                'name'     => $isConsolidated ? "Biaya Ongkir ({$orders->count()} Unit TEFA)" : 'Biaya Ongkir Kurir',
             ];
         }
 
-        // Add discount if any
-        $diskon = (int) ($order->diskon ?? 0);
-        if ($diskon > 0) {
+        // Pastikan diskon tidak membuat total item negatif dan selalu selaras dengan sum(grand_total)
+        $positiveTotal = $totalProductAmount + $totalOngkir;
+        $cappedDiskon = min($totalDiskon, $positiveTotal);
+        if ($cappedDiskon > 0) {
             $items[] = [
                 'id'       => 'DISCOUNT-VOUCHER',
-                'price'    => -$diskon,
+                'price'    => -$cappedDiskon,
                 'quantity' => 1,
                 'name'     => 'Potongan Diskon Voucher',
             ];
         }
 
-        // Recalculate gross amount to match sum of items
-        $sumItems = 0;
-        foreach ($items as $it) {
-            $sumItems += ($it['price'] * $it['quantity']);
-        }
-        $grossAmount = $sumItems > 0 ? $sumItems : (int) $order->grand_total;
+        $grossAmount = max(1, $positiveTotal - $cappedDiskon);
 
-        $customerName = $order->shipping->nama_penerima ?? $order->user->nama ?? 'Pelanggan';
+        $customerName = $order->shipping->penerima_nama ?? $order->user->nama ?? 'Pelanggan';
         $customerEmail = $order->user->email ?? 'customer@polinela.ac.id';
-        $customerPhone = $order->shipping->no_hp ?? $order->user->no_hp ?? '081234567890';
+        $customerPhone = $order->shipping->penerima_telepon ?? $order->user->no_hp ?? '081234567890';
         $frontendUrl = config('app.frontend_url', 'http://localhost:5173');
 
         $payload = [
@@ -134,23 +161,18 @@ class MidtransService
             if ($response->successful()) {
                 $data = $response->json();
                 $snapToken = $data['token'] ?? null;
-                
-                // Simpan token dan Midtrans Order ID di database untuk auto-sync
+
+                // Simpan snap_token & snap_order_id di seluruh sibling order tanpa menimpa payments.no_transaksi (TRX-...)
                 try {
-                    $order->update([
+                    Order::whereIn('id', $orders->pluck('id'))->update([
                         'snap_token'    => $snapToken,
                         'snap_order_id' => $midtransOrderId,
                     ]);
-                    if ($order->payment) {
-                        $order->payment->update([
-                            'no_transaksi' => $midtransOrderId,
-                        ]);
-                    }
                 } catch (\Exception $saveEx) {
-                    // Ignore if column doesn't exist
+                    Log::warning("Failed to persist snap metadata: " . $saveEx->getMessage());
                 }
 
-                Log::info("Midtrans Snap Token generated successfully for Order #{$order->id}: {$snapToken}");
+                Log::info("Midtrans Snap Token generated ({$orders->count()} order(s), total Rp {$grossAmount}, midtrans_id={$midtransOrderId})");
                 return $snapToken;
             } else {
                 Log::warning("Midtrans Snap API Error: " . $response->body());

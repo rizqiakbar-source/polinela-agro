@@ -208,7 +208,8 @@ const AdminDashboard = () => {
                     unitStats={unit_stats}
                     roleTitle="Store Overview (Executive Leadership)"
                     roleSubtitle="Monitoring performa finansial, pencapaian target bulanan, dan matriks dinamika penjualan produk TEFA"
-                    onQuickStock={handleQuickStock}
+                    onQuickStock={null}
+                    isReadOnly={true}
                 />
 
                 {/* Komparasi Finansial & Kontribusi 4 Unit TEFA */}

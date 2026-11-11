@@ -122,9 +122,30 @@ function App() {
                             }
                         >
                             <Route index element={<AdminDashboard />} />
-                            <Route path="products" element={<AdminProducts />} />
-                            <Route path="orders" element={<AdminOrders />} />
-                            <Route path="payments" element={<AdminPayments />} />
+                            <Route
+                                path="products"
+                                element={
+                                    <ProtectedRoute allowedRoles={['superadmin', 'admin_unit']}>
+                                        <AdminProducts />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="orders"
+                                element={
+                                    <ProtectedRoute allowedRoles={['superadmin', 'admin_unit']}>
+                                        <AdminOrders />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="payments"
+                                element={
+                                    <ProtectedRoute allowedRoles={['superadmin', 'admin_unit']}>
+                                        <AdminPayments />
+                                    </ProtectedRoute>
+                                }
+                            />
                             <Route path="reports" element={<AdminReports />} />
                             <Route path="reviews" element={<AdminReviews />} />
                             

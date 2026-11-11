@@ -103,21 +103,27 @@ class ProductController extends Controller
         $user = $request->user();
 
         $validated = $request->validate([
-            'rating' => 'required|integer|min:1|max:5',
-            'ulasan' => 'required|string|max:1000',
+            'rating'   => 'required|integer|min:1|max:5',
+            'komentar' => 'nullable|string|max:1000|required_without:ulasan',
+            'ulasan'   => 'nullable|string|max:1000|required_without:komentar',
+            'order_id' => 'nullable|integer',
         ]);
+
+        $komentarText = trim((string) ($validated['komentar'] ?? $validated['ulasan'] ?? ''));
 
         $product = Product::findOrFail($id);
 
         // Validasi Anti-Review Bombing: Konsumen harus sudah pernah membeli produk dan berstatus 'selesai'
-        $hasPurchased = \App\Models\Order::where('user_id', $user->id)
+        $purchasedOrder = \App\Models\Order::where('user_id', $user->id)
             ->where('status', 'selesai')
             ->whereHas('details', function ($query) use ($product) {
                 $query->where('product_id', $product->id);
             })
-            ->exists();
+            ->when(!empty($validated['order_id']), fn($q) => $q->where('id', $validated['order_id']))
+            ->orderBy('id', 'desc')
+            ->first();
 
-        if (!$hasPurchased) {
+        if (!$purchasedOrder) {
             return response()->json([
                 'status'  => 'error',
                 'success' => false,
@@ -131,14 +137,17 @@ class ProductController extends Controller
                 'user_id'    => $user->id,
             ],
             [
-                'rating'       => $validated['rating'],
-                'ulasan'       => $validated['ulasan'],
-                'is_published' => true,
+                'order_id' => $purchasedOrder->id,
+                'rating'   => $validated['rating'],
+                'komentar' => $komentarText,
+                'status'   => 'approved',
             ]
         );
 
         // Update product average rating
-        $avg = \App\Models\Review::where('product_id', $product->id)->avg('rating');
+        $avg = \App\Models\Review::where('product_id', $product->id)
+            ->where('status', 'approved')
+            ->avg('rating');
         $product->rating_avg = round($avg, 1);
         $product->save();
 

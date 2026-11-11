@@ -67,7 +67,7 @@ class UserController extends Controller
             'unit_id'   => ($validated['role'] === 'admin_unit' && !empty($validated['unit_id'])) ? $validated['unit_id'] : null,
             'no_hp'     => $validated['no_hp'] ?? null,
             'alamat'    => $validated['alamat'] ?? null,
-            'avatar'    => 'default-avatar.png',
+            'foto'      => null,
             'is_active' => $request->has('is_active') ? $request->boolean('is_active') : true,
         ]);
 

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import client from '../../api/client';
+import { useAuth } from '../../context/AuthContext';
 import { Star, Trash2, Search, MessageSquare } from 'lucide-react';
 import { formatDate } from '../../utils/format';
 
 const AdminReviews = () => {
+    const { isPimpinan } = useAuth();
     const [reviews, setReviews] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -80,19 +82,19 @@ const AdminReviews = () => {
                                 <th>Rating</th>
                                 <th>Ulasan</th>
                                 <th>Tanggal</th>
-                                <th className="text-end" style={{ width: '80px' }}>Aksi</th>
+                                {!isPimpinan && <th className="text-end" style={{ width: '80px' }}>Aksi</th>}
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
                                 <tr>
-                                    <td colSpan="6" className="text-center py-4">
+                                    <td colSpan={isPimpinan ? 5 : 6} className="text-center py-4">
                                         <div className="spinner-border text-success" role="status"></div>
                                     </td>
                                 </tr>
                             ) : filteredReviews.length === 0 ? (
                                 <tr>
-                                    <td colSpan="6" className="text-center py-4 text-muted">
+                                    <td colSpan={isPimpinan ? 5 : 6} className="text-center py-4 text-muted">
                                         Belum ada ulasan produk yang masuk.
                                     </td>
                                 </tr>
@@ -117,11 +119,13 @@ const AdminReviews = () => {
                                             <p className="mb-0 small text-body">{r.komentar || 'Tidak ada komentar tertulis.'}</p>
                                         </td>
                                         <td className="small text-muted">{formatDate(r.created_at)}</td>
-                                        <td className="text-end">
-                                            <button onClick={() => handleDelete(r.id)} className="btn btn-sm btn-outline-danger rounded-circle p-1" title="Hapus Ulasan">
-                                                <Trash2 size={14} />
-                                            </button>
-                                        </td>
+                                        {!isPimpinan && (
+                                            <td className="text-end">
+                                                <button onClick={() => handleDelete(r.id)} className="btn btn-sm btn-outline-danger rounded-circle p-1" title="Hapus Ulasan">
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </td>
+                                        )}
                                     </tr>
                                 ))
                             )}

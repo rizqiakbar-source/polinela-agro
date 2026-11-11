@@ -6,7 +6,7 @@ import { Trash2, Plus, Minus, Store, ShoppingBag, ArrowRight, ShieldCheck, Shopp
 import Swal from 'sweetalert2';
 
 const Keranjang = () => {
-    const { cartGroups, cartSummary, loading, updateQty, removeFromCart } = useCart();
+    const { cartGroups, cartSummary, loading, updatingCartId, updateQty, removeFromCart } = useCart();
     const navigate = useNavigate();
 
     const handleProceedToCheckout = () => {
@@ -18,6 +18,16 @@ const Keranjang = () => {
             });
             return;
         }
+
+        if (cartSummary?.has_stock_issue) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Periksa Stok Produk ⚠️',
+                text: 'Terdapat produk di keranjang Anda yang stoknya telah habis atau melebihi persediaan. Silakan sesuaikan jumlah atau hapus produk tersebut.',
+            });
+            return;
+        }
+
         navigate('/checkout');
     };
 
@@ -78,13 +88,15 @@ const Keranjang = () => {
                                         {/* Item Rows */}
                                         <div className="p-3">
                                             {group.items.map((item, index) => {
-                                                const maxStock = item.product?.stocks?.reduce((acc, s) => acc + (s.jumlah_stok - s.stok_tersedia), 0) || 50;
+                                                const availableStock = item.stok_tersedia ?? item.stok ?? item.product?.stok ?? 0;
+                                                const isOutOfStock = availableStock <= 0 || item.is_out_of_stock;
+                                                const isOverStock = (item.jumlah > availableStock) || item.is_over_stock;
                                                 const itemImage = item.product?.gambar_utama 
                                                     ? getImageUrl(item.product.gambar_utama) 
                                                     : (item.product?.images?.[0]?.gambar ? getImageUrl(item.product.images[0].gambar) : 'https://placehold.co/100x100?text=Agro');
 
                                                 return (
-                                                    <div key={item.id} className={`row align-items-center py-3 ${index < group.items.length - 1 ? 'border-bottom' : ''}`}>
+                                                    <div key={item.id} className={`row align-items-center py-3 ${index < group.items.length - 1 ? 'border-bottom' : ''} ${isOutOfStock ? 'opacity-75 bg-danger bg-opacity-10 rounded-3 px-2' : ''}`}>
                                                         {/* Product Image & Title */}
                                                         <div className="col-md-5 col-12 mb-2 mb-md-0 d-flex align-items-center gap-3">
                                                             <img
@@ -97,9 +109,24 @@ const Keranjang = () => {
                                                                 <Link to={`/produk/${item.product?.id}`} className="text-decoration-none text-dark fw-semibold small d-block mb-1 text-truncate-2">
                                                                     {item.product?.nama_produk}
                                                                 </Link>
-                                                                <span className="text-muted small">
-                                                                    {formatRupiah(item.product?.harga)} / {item.product?.satuan || 'Pcs'}
-                                                                </span>
+                                                                <div className="d-flex flex-wrap align-items-center gap-2">
+                                                                    <span className="text-muted small">
+                                                                        {formatRupiah(item.product?.harga)} / {item.product?.satuan || 'Pcs'}
+                                                                    </span>
+                                                                    {isOutOfStock ? (
+                                                                        <span className="badge bg-danger text-white" style={{ fontSize: '10px' }}>
+                                                                            Stok Habis
+                                                                        </span>
+                                                                    ) : isOverStock ? (
+                                                                        <span className="badge bg-warning text-dark" style={{ fontSize: '10px' }}>
+                                                                            Sisa Stok: {availableStock}
+                                                                        </span>
+                                                                    ) : availableStock <= 5 ? (
+                                                                        <span className="badge bg-info bg-opacity-25 text-info-emphasis" style={{ fontSize: '10px' }}>
+                                                                            Tersisa {availableStock}
+                                                                        </span>
+                                                                    ) : null}
+                                                                </div>
                                                             </div>
                                                         </div>
 
@@ -109,18 +136,22 @@ const Keranjang = () => {
                                                                 <button
                                                                     className="btn btn-outline-secondary"
                                                                     type="button"
-                                                                    disabled={item.jumlah <= 1}
+                                                                    disabled={item.jumlah <= 1 || isOutOfStock || updatingCartId === item.id}
                                                                     onClick={() => updateQty(item.id, item.jumlah - 1)}
                                                                 >
                                                                     <Minus size={12} />
                                                                 </button>
-                                                                <span className="form-control text-center fw-bold p-1" style={{ fontSize: '13px' }}>
-                                                                    {item.jumlah}
+                                                                <span className={`form-control text-center fw-bold p-1 ${isOverStock ? 'text-danger border-danger' : ''}`} style={{ fontSize: '13px' }}>
+                                                                    {updatingCartId === item.id ? (
+                                                                        <span className="spinner-border spinner-border-sm" style={{ width: '10px', height: '10px' }} role="status"></span>
+                                                                    ) : (
+                                                                        item.jumlah
+                                                                    )}
                                                                 </span>
                                                                 <button
                                                                     className="btn btn-outline-secondary"
                                                                     type="button"
-                                                                    disabled={item.jumlah >= maxStock}
+                                                                    disabled={item.jumlah >= availableStock || isOutOfStock || updatingCartId === item.id}
                                                                     onClick={() => updateQty(item.id, item.jumlah + 1)}
                                                                 >
                                                                     <Plus size={12} />
@@ -202,9 +233,16 @@ const Keranjang = () => {
                                     <h4 className="fw-bold text-success mb-0">{formatRupiah(cartSummary.subtotal)}</h4>
                                 </div>
 
+                                {cartSummary?.has_stock_issue && (
+                                    <div className="alert alert-danger py-2 px-3 small rounded-3 mb-3 d-flex align-items-center gap-2">
+                                        <span>⚠️ Ada produk dengan stok tidak mencukupi atau habis. Mohon sesuaikan jumlah sebelum lanjut.</span>
+                                    </div>
+                                )}
+
                                 <button
                                     onClick={handleProceedToCheckout}
-                                    className="btn btn-success btn-lg rounded-pill w-100 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm mb-3"
+                                    disabled={cartSummary?.has_stock_issue}
+                                    className={`btn btn-lg rounded-pill w-100 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm mb-3 ${cartSummary?.has_stock_issue ? 'btn-secondary opacity-75' : 'btn-success'}`}
                                 >
                                     <span>Lanjut ke Checkout</span>
                                     <ArrowRight size={18} />

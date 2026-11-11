@@ -159,10 +159,10 @@ const AdminDashboard = () => {
         return (
             <div className="container-fluid p-0">
                 {/* Executive Header Banner */}
-                <div className="card border-0 shadow-sm rounded-4 p-4 mb-4" style={{ background: 'var(--gradient-primary)', color: '#ffffff' }}>
+                <div className="card border-0 shadow-sm rounded-4 p-3 p-md-4 mb-4 overflow-hidden" style={{ background: 'var(--gradient-primary)', color: '#ffffff' }}>
                     <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
-                        <div>
-                            <div className="d-flex align-items-center gap-2 mb-1">
+                        <div style={{ minWidth: 0, flex: '1 1 280px' }}>
+                            <div className="d-flex flex-wrap align-items-center gap-2 mb-1">
                                 <span className="badge bg-white text-success fw-bold px-3 py-1 rounded-pill d-inline-flex align-items-center gap-1">
                                     <Building2 size={13} /> Portal Pengawasan Eksekutif
                                 </span>
@@ -170,7 +170,7 @@ const AdminDashboard = () => {
                                     Politeknik Negeri Lampung
                                 </span>
                             </div>
-                            <h3 className="fw-bold mb-1 text-white">
+                            <h3 className="fw-bold mb-1 text-white fs-4 fs-md-3 text-wrap">
                                 Dashboard Eksekutif & Hilirisasi TEFA
                             </h3>
                             <p className="mb-0 text-white-50 small">
@@ -285,10 +285,10 @@ const AdminDashboard = () => {
         return (
             <div className="container-fluid p-0">
                 {/* Store Unit Hero Banner */}
-                <div className="card border-0 shadow-sm rounded-4 p-4 mb-4" style={{ background: 'var(--gradient-primary)', color: '#ffffff' }}>
+                <div className="card border-0 shadow-sm rounded-4 p-3 p-md-4 mb-4 overflow-hidden" style={{ background: 'var(--gradient-primary)', color: '#ffffff' }}>
                     <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
-                        <div>
-                            <div className="d-flex align-items-center gap-2 mb-1">
+                        <div style={{ minWidth: 0, flex: '1 1 280px' }}>
+                            <div className="d-flex flex-wrap align-items-center gap-2 mb-1">
                                 <span className="badge bg-white text-success fw-bold px-3 py-1 rounded-pill d-inline-flex align-items-center gap-1">
                                     <Store size={13} /> Pusat Operasional Unit Toko
                                 </span>
@@ -296,7 +296,7 @@ const AdminDashboard = () => {
                                     TEFA #{user?.unit_id || unit?.id || 1}
                                 </span>
                             </div>
-                            <h3 className="fw-bold mb-1 text-white">
+                            <h3 className="fw-bold mb-1 text-white fs-4 fs-md-3 text-wrap">
                                 {unit?.nama_unit || user?.unit?.nama_unit || 'Unit Usaha Perkebunan Polinela'}
                             </h3>
                             <p className="mb-0 text-white-50 small">
@@ -488,10 +488,10 @@ const AdminDashboard = () => {
     return (
         <div className="container-fluid p-0 animate-fade-in">
             {/* Superadmin Master Hero Banner */}
-            <div className="card border-0 shadow-sm rounded-4 p-4 mb-4" style={{ background: 'var(--gradient-primary)', color: '#ffffff' }}>
+            <div className="card border-0 shadow-sm rounded-4 p-3 p-md-4 mb-4 overflow-hidden" style={{ background: 'var(--gradient-primary)', color: '#ffffff' }}>
                 <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
-                    <div>
-                        <div className="d-flex align-items-center gap-2 mb-1">
+                    <div style={{ minWidth: 0, flex: '1 1 280px' }}>
+                        <div className="d-flex flex-wrap align-items-center gap-2 mb-1">
                             <span className="badge bg-white text-success fw-bold px-3 py-1 rounded-pill d-inline-flex align-items-center gap-1">
                                 <ShieldCheck size={13} /> Pusat Kendali Superadmin Master
                             </span>
@@ -499,7 +499,7 @@ const AdminDashboard = () => {
                                 Polinela Agro Digital
                             </span>
                         </div>
-                        <h3 className="fw-bold mb-1 text-white">
+                        <h3 className="fw-bold mb-1 text-white fs-4 fs-md-3 text-wrap">
                             Dashboard Analitik & Operasional Master
                         </h3>
                         <p className="mb-0 text-white-50 small">
@@ -731,16 +731,16 @@ const AdminDashboard = () => {
                     <div className="card border-0 shadow-sm rounded-4 p-4 h-100 text-center d-flex flex-column justify-content-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
                         <div className="d-flex align-items-center justify-content-center gap-2 mb-2">
                             <Award size={22} className="text-warning" />
-                            <h6 className="fw-bold mb-0" style={{ color: 'var(--text-heading)' }}>Evaluasi Usability (SUS)</h6>
+                            <h6 className="fw-bold mb-0" style={{ color: 'var(--text-heading)' }}>Standar Acuan Usability (SUS)</h6>
                         </div>
                         <div className="display-5 fw-bold text-success mb-1">
-                            {sus_score || '82.5'}
+                            {sus_score || '80+'}
                         </div>
                         <span className="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1.5 mx-auto small fw-semibold">
-                            Grade A (Excellent Usability)
+                            Target Standar: Grade A
                         </span>
                         <p className="text-muted mt-3 mb-0 small" style={{ fontSize: '11.5px' }}>
-                            Skor kepuasan antarmuka pengguna berdasarkan 10 instrumen kuesioner System Usability Scale civitas akademika Polinela.
+                            Tolok ukur kriteria pengalaman pengguna (UX) platform komersialisasi riset Teaching Factory Polinela.
                         </p>
                     </div>
                 </div>

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import client, { STORAGE_BASE_URL } from '../api/client';
@@ -10,77 +11,10 @@ import {
     Building2, Sun, Moon, CheckCircle2, AlertCircle, Copy, 
     Eye, EyeOff, Crop, RefreshCw, Calendar, Sparkles, KeyRound,
     HelpCircle, ExternalLink, Activity, Info, Palette, Check, X,
-    Layers, Compass, Flame, Droplets, MoonStar, Zap, Sprout
+    Layers, Compass, Zap,
+    BarChart3, ArrowRight, ShieldCheck, ShoppingBag, Store, Package, Sprout
 } from 'lucide-react';
-
-const BANNER_CATEGORIES = [
-    {
-        id: 'agro',
-        name: 'Perkebunan & Alam',
-        icon: Sprout,
-        presets: [
-            { id: 'emerald', name: 'Hijau Polinela Agro', value: 'linear-gradient(135deg, #166534 0%, #15803d 50%, #047857 100%)' },
-            { id: 'forest', name: 'Hutan Pinus Riset', value: 'linear-gradient(135deg, #064e3b 0%, #047857 50%, #059669 100%)' },
-            { id: 'lime', name: 'Citrus & Daun Segar', value: 'linear-gradient(135deg, #3f6212 0%, #65a30d 50%, #84cc16 100%)' },
-            { id: 'tea', name: 'Kebun Teh Puncak', value: 'linear-gradient(135deg, #14532d 0%, #16a34a 50%, #4ade80 100%)' },
-            { id: 'coffee', name: 'Kopi Robusta Lampung', value: 'linear-gradient(135deg, #451a03 0%, #78350f 50%, #9a3412 100%)' },
-            { id: 'cacao', name: 'Kakao & Cokelat Emas', value: 'linear-gradient(135deg, #3b1d11 0%, #713f12 50%, #ca8a04 100%)' },
-        ]
-    },
-    {
-        id: 'ocean',
-        name: 'Samudra & Langit',
-        icon: Droplets,
-        presets: [
-            { id: 'sapphire', name: 'Deep Ocean Sapphire', value: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #06b6d4 100%)' },
-            { id: 'pacific', name: 'Pacific Cyan Wave', value: 'linear-gradient(135deg, #0e7490 0%, #06b6d4 50%, #38bdf8 100%)' },
-            { id: 'navy', name: 'Midnight Navy Blue', value: 'linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e3a8a 100%)' },
-            { id: 'arctic', name: 'Arctic Ice Glaze', value: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #93c5fd 100%)' },
-            { id: 'teal', name: 'Pantai Tropis Teal', value: 'linear-gradient(135deg, #064e3b 0%, #0d9488 50%, #2dd4bf 100%)' },
-        ]
-    },
-    {
-        id: 'sunset',
-        name: 'Senja & Kehangatan',
-        icon: Flame,
-        presets: [
-            { id: 'sunset', name: 'Senja Tropis Lampung', value: 'linear-gradient(135deg, #9a3412 0%, #ea580c 50%, #f59e0b 100%)' },
-            { id: 'flame', name: 'Crimson Ember Flame', value: 'linear-gradient(135deg, #881337 0%, #e11d48 50%, #f43f5e 100%)' },
-            { id: 'gold', name: 'Panen Raya Golden', value: 'linear-gradient(135deg, #78350f 0%, #d97706 50%, #fbbf24 100%)' },
-            { id: 'burgundy', name: 'Ruby Velvet Wine', value: 'linear-gradient(135deg, #4c0519 0%, #9f1239 50%, #e11d48 100%)' },
-            { id: 'peach', name: 'Apricot Sunset Glow', value: 'linear-gradient(135deg, #c2410c 0%, #f97316 50%, #fdba74 100%)' },
-        ]
-    },
-    {
-        id: 'cyber',
-        name: 'Cyber & Aurora',
-        icon: Sparkles,
-        presets: [
-            { id: 'aurora', name: 'Aurora Borealis Glow', value: 'linear-gradient(135deg, #064e3b 0%, #0284c7 50%, #9333ea 100%)' },
-            { id: 'royal', name: 'Royal Amethyst Ungu', value: 'linear-gradient(135deg, #4c1d95 0%, #7c3aed 50%, #c084fc 100%)' },
-            { id: 'cyber', name: 'Cyberpunk Neon Wave', value: 'linear-gradient(135deg, #831843 0%, #c026d3 50%, #3b82f6 100%)' },
-            { id: 'rose', name: 'Rose Sakura Blossom', value: 'linear-gradient(135deg, #831843 0%, #db2777 50%, #f472b6 100%)' },
-            { id: 'mystic', name: 'Mystic Indigo Nebula', value: 'linear-gradient(135deg, #312e81 0%, #4338ca 50%, #818cf8 100%)' },
-        ]
-    },
-    {
-        id: 'stealth',
-        name: 'Monokrom & Elegan',
-        icon: MoonStar,
-        presets: [
-            { id: 'midnight', name: 'Midnight Carbon Slate', value: 'linear-gradient(135deg, #090d16 0%, #1e293b 50%, #334155 100%)' },
-            { id: 'titanium', name: 'Titanium Metallic Gray', value: 'linear-gradient(135deg, #18181b 0%, #3f3f46 50%, #71717a 100%)' },
-            { id: 'pureblack', name: 'Deep Black Onyx', value: 'linear-gradient(135deg, #000000 0%, #111827 50%, #1f2937 100%)' },
-            { id: 'silver', name: 'Silver Platinum Steel', value: 'linear-gradient(135deg, #334155 0%, #64748b 50%, #94a3b8 100%)' },
-        ]
-    }
-];
-
-const SOLID_SWATCHES = [
-    '#166534', '#15803d', '#14532d', '#047857', '#0e7490', '#1d4ed8', 
-    '#1e3a8a', '#4338ca', '#6b21a8', '#831843', '#9f1239', '#9a3412', 
-    '#c2410c', '#78350f', '#0f172a', '#18181b'
-];
+import { BANNER_CATEGORIES, SOLID_SWATCHES } from '../data/profileBannerThemes';
 
 const Profil = () => {
     const { user, fetchUser } = useAuth();
@@ -238,18 +172,62 @@ const Profil = () => {
             });
 
             if (res.data.status === 'success' || res.data.success) {
-                const titleText = passwordBaru ? 'Kata Sandi & Profil Berhasil Diperbarui!' : 'Profil Berhasil Diperbarui!';
-                const descText = passwordBaru 
-                    ? 'Kata sandi baru telah aktif di database. Gunakan kata sandi baru ini saat login ke sistem.' 
-                    : 'Seluruh data profil dan preferensi akun Anda telah disimpan.';
+                if (res.data.requires_otp) {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Verifikasi Email Baru Diperlukan ✉️',
+                        text: res.data.message || 'Silakan masukkan 6 digit kode OTP yang telah dikirimkan ke alamat email baru Anda.',
+                        input: 'text',
+                        inputPlaceholder: 'Masukkan 6 Digit OTP',
+                        confirmButtonText: 'Verifikasi Sekarang',
+                        confirmButtonColor: '#16a34a',
+                        showCancelButton: true,
+                        cancelButtonText: 'Nanti Saja',
+                        showLoaderOnConfirm: true,
+                        preConfirm: async (otpVal) => {
+                            const trimmed = (otpVal || '').trim();
+                            if (!trimmed || trimmed.length !== 6) {
+                                Swal.showValidationMessage('Kode OTP harus terdiri dari 6 angka.');
+                                return false;
+                            }
+                            try {
+                                const vRes = await client.post('/auth/verify-otp', {
+                                    email: res.data.email,
+                                    otp: trimmed,
+                                });
+                                return vRes.data;
+                            } catch (err) {
+                                Swal.showValidationMessage(err.response?.data?.message || 'Kode OTP salah atau telah kedaluwarsa.');
+                                return false;
+                            }
+                        },
+                        allowOutsideClick: () => !Swal.isLoading()
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Email Terverifikasi!',
+                                text: 'Alamat email baru Anda telah berhasil diverifikasi.',
+                                timer: 2000,
+                                showConfirmButton: false,
+                            });
+                        }
+                    });
+                } else {
+                    const titleText = passwordBaru ? 'Kata Sandi & Profil Berhasil Diperbarui!' : 'Profil Berhasil Diperbarui!';
+                    const descText = passwordBaru 
+                        ? 'Kata sandi baru telah aktif di database. Gunakan kata sandi baru ini saat login ke sistem.' 
+                        : 'Seluruh data profil dan preferensi akun Anda telah disimpan.';
 
-                Swal.fire({
-                    icon: 'success',
-                    title: titleText,
-                    text: descText,
-                    timer: 3000,
-                    showConfirmButton: false,
-                });
+                    Swal.fire({
+                        icon: 'success',
+                        title: titleText,
+                        text: descText,
+                        timer: 3000,
+                        showConfirmButton: false,
+                    });
+                }
+
                 await fetchUser();
                 setPasswordBaru('');
                 setPasswordKonfirmasi('');
@@ -288,16 +266,211 @@ const Profil = () => {
         avatarUrl = user.foto_url || user.avatar_url;
     }
 
-    const getRoleBadge = (role) => {
+    const getRoleProfileConfig = (currUser) => {
+        const role = currUser?.role || 'konsumen';
+        const unitName = currUser?.unit?.nama_unit;
+
         switch(role) {
-            case 'superadmin': return { label: 'Super Administrator', color: '#ef4444', bg: 'rgba(239,68,68,0.12)', icon: Shield };
-            case 'admin_unit': return { label: 'Admin Unit Usaha', color: '#3b82f6', bg: 'rgba(59,130,246,0.12)', icon: Building2 };
-            case 'pimpinan': return { label: 'Pimpinan / Eksekutif', color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)', icon: Layers };
-            default: return { label: 'Pelanggan Terverifikasi', color: '#22c55e', bg: 'rgba(34,197,94,0.12)', icon: Sprout };
+            case 'pimpinan':
+                return {
+                    roleKey: 'pimpinan',
+                    badgeText: 'Pimpinan / Eksekutif',
+                    badgeBg: 'rgba(139,92,246,0.12)',
+                    badgeColor: '#8b5cf6',
+                    heroBadgeIcon: Layers,
+                    heroBadgeText: 'Akun Resmi Pimpinan • Polinela Agro Digital',
+                    headerSubtitle: 'Kelola identitas resmi pimpinan, foto profil eksekutif, dan keamanan akun institusi',
+                    banner: {
+                        gradient: 'linear-gradient(135deg, #064e3b 0%, #047857 50%, #0d9488 100%)',
+                        badgeTag: 'Hak Akses Eksekutif',
+                        badgeTagClass: 'bg-warning text-dark',
+                        title: 'Pusat Akun & Profil Pimpinan Polinela',
+                        desc: 'Halaman ini khusus untuk mengatur foto profil, identitas resmi, dan kata sandi akun Pimpinan Anda. Untuk memantau omset, performa unit Teaching Factory (TEFA), dan laporan eksekutif institusi, silakan akses Dashboard Pimpinan.',
+                        buttonText: 'Buka Dashboard Pimpinan',
+                        buttonTo: '/admin',
+                        buttonIcon: BarChart3
+                    },
+                    biodata: {
+                        title: 'Informasi Identitas & Kontak Resmi Pimpinan',
+                        subtitle: 'Data profil resmi pimpinan eksekutif untuk keperluan autentikasi dan komunikasi institusi Polinela Agro Digital.',
+                        namaLabel: 'Nama Lengkap Beserta Gelar',
+                        namaPlaceholder: 'Contoh: Dr. Ir. H. Nama Pimpinan, M.P.',
+                        emailHelp: 'Digunakan untuk login pimpinan dan menerima ringkasan laporan eksekutif berkala.',
+                        phoneLabel: 'Nomor Kontak Dinas / WhatsApp',
+                        phoneHelp: 'Untuk koordinasi dinas darurat dan autentikasi akun pimpinan.',
+                        alamatLabel: 'Alamat Kantor / Domisili Pimpinan',
+                        alamatPlaceholder: 'Contoh: Gedung Direktorat / Rektorat Polinela, Jl. Soekarno Hatta No. 10, Rajabasa, Bandar Lampung'
+                    },
+                    keamanan: {
+                        subtitle: 'Pastikan kata sandi akun pimpinan kuat untuk melindungi integritas dan kerahasiaan data eksekutif kampus.'
+                    },
+                    akun: {
+                        unitLabel: 'Seluruh Unit Teaching Factory (Pengawasan Eksekutif)',
+                        actionCard: {
+                            bgClass: 'bg-primary bg-opacity-10 border-primary border-opacity-25',
+                            textClass: 'text-primary',
+                            icon: BarChart3,
+                            title: 'Akses Dashboard Eksekutif Pimpinan',
+                            desc: 'Tinjau statistik omset, perbandingan penjualan per-unit TEFA, dan unduh laporan resmi institusi.',
+                            btnText: 'Buka Dashboard Pimpinan',
+                            btnClass: 'btn-primary',
+                            btnTo: '/admin'
+                        }
+                    }
+                };
+
+            case 'superadmin':
+                return {
+                    roleKey: 'superadmin',
+                    badgeText: 'Super Administrator',
+                    badgeBg: 'rgba(239,68,68,0.12)',
+                    badgeColor: '#ef4444',
+                    heroBadgeIcon: ShieldCheck,
+                    heroBadgeText: 'Akun Master Super Administrator • Polinela Agro Digital',
+                    headerSubtitle: 'Kelola kredensial administrator utama, foto profil, dan preferensi keamanan master sistem',
+                    banner: {
+                        gradient: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c0519 100%)',
+                        badgeTag: 'Akses Penuh Master Admin',
+                        badgeTagClass: 'bg-danger text-white',
+                        title: 'Pusat Akun & Kontrol Super Administrator',
+                        desc: 'Anda memiliki kendali master atas platform Polinela Agro. Untuk manajemen seluruh unit usaha perkebunan, kelola akun pengguna, katalog semua komoditas, dan audit transaksi pembayaran, silakan buka Panel Super Admin.',
+                        buttonText: 'Buka Panel Super Admin',
+                        buttonTo: '/admin',
+                        buttonIcon: ShieldCheck
+                    },
+                    biodata: {
+                        title: 'Informasi Identitas & Kontak Super Administrator',
+                        subtitle: 'Data master administrator untuk audit keamanan, log operasional, dan pemulihan darurat sistem.',
+                        namaLabel: 'Nama Lengkap Administrator',
+                        namaPlaceholder: 'Nama lengkap pengelola utama sistem',
+                        emailHelp: 'Email master untuk login superadmin, log audit transaksi, dan notifikasi server.',
+                        phoneLabel: 'Nomor WhatsApp Admin Utama',
+                        phoneHelp: 'Untuk verifikasi 2FA darurat dan pemulihan akun sistem.',
+                        alamatLabel: 'Alamat Kantor Pusat Pengelola Sistem',
+                        alamatPlaceholder: 'Contoh: Gedung UPT Komputer / TIK Polinela, Jl. Soekarno Hatta No. 10, Bandar Lampung'
+                    },
+                    keamanan: {
+                        subtitle: 'Gunakan kombinasi sandi master yang sangat kuat dan unik untuk menjaga keamanan seluruh infrastruktur e-commerce Polinela Agro.'
+                    },
+                    akun: {
+                        unitLabel: 'Seluruh Unit Usaha (Akses Penuh Master)',
+                        actionCard: {
+                            bgClass: 'bg-danger bg-opacity-10 border-danger border-opacity-25',
+                            textClass: 'text-danger',
+                            icon: ShieldCheck,
+                            title: 'Akses Panel Master Administrator',
+                            desc: 'Kelola pengguna, otorisasi staf unit, audit transaksi pembayaran Midtrans, dan pengaturan global.',
+                            btnText: 'Buka Panel Admin',
+                            btnClass: 'btn-danger',
+                            btnTo: '/admin'
+                        }
+                    }
+                };
+
+            case 'admin_unit':
+                return {
+                    roleKey: 'admin_unit',
+                    badgeText: 'Admin Unit Usaha',
+                    badgeBg: 'rgba(59,130,246,0.12)',
+                    badgeColor: '#3b82f6',
+                    heroBadgeIcon: Building2,
+                    heroBadgeText: `Pengelola Unit ${unitName || 'Usaha TEFA'} • Polinela Agro Digital`,
+                    headerSubtitle: 'Kelola identitas penanggung jawab unit, foto profil, dan nomor kontak resmi toko perkebunan',
+                    banner: {
+                        gradient: 'linear-gradient(135deg, #0c4a6e 0%, #0369a1 50%, #1d4ed8 100%)',
+                        badgeTag: `Unit TEFA: ${unitName || 'Usaha Perkebunan'}`,
+                        badgeTagClass: 'bg-info text-white',
+                        title: `Pusat Akun Pengelola Unit ${unitName || 'Usaha'}`,
+                        desc: 'Anda bertugas mengelola unit toko perkebunan ini. Untuk memproses pesanan komoditas yang masuk, memperbarui ketersediaan stok panen, dan mengecek omset toko unit Anda, silakan akses Panel Pengelola Unit.',
+                        buttonText: 'Buka Panel Unit Toko',
+                        buttonTo: '/admin',
+                        buttonIcon: Store
+                    },
+                    biodata: {
+                        title: `Informasi Kontak Pengelola Unit ${unitName || 'Usaha'}`,
+                        subtitle: 'Data kontak penanggung jawab unit toko perkebunan untuk koordinasi stok panen dan pemrosesan pesanan.',
+                        namaLabel: 'Nama Lengkap Penanggung Jawab Unit',
+                        namaPlaceholder: 'Nama penanggung jawab operasional unit',
+                        emailHelp: 'Email operasional unit untuk menerima notifikasi pesanan masuk dan konfirmasi pembayaran pembeli.',
+                        phoneLabel: 'Nomor WhatsApp Layanan Unit / CS Toko',
+                        phoneHelp: 'Digunakan pembeli dan kurir untuk koordinasi ketersediaan produk dan penjemputan paket.',
+                        alamatLabel: 'Alamat Lokasi Fisik Unit / Toko Perkebunan',
+                        alamatPlaceholder: 'Contoh: Laboratorium / Kebun Percobaan TEFA Polinela, Gedung Produksi Unit, Bandar Lampung'
+                    },
+                    keamanan: {
+                        subtitle: 'Amankan akun pengelola unit Anda agar pengelolaan katalog barang dan pesanan pembeli selalu terlindungi.'
+                    },
+                    akun: {
+                        unitLabel: `${unitName || 'Unit Usaha'} (Unit Yang Dikelola)`,
+                        actionCard: {
+                            bgClass: 'bg-primary bg-opacity-10 border-primary border-opacity-25',
+                            textClass: 'text-primary',
+                            icon: Store,
+                            title: 'Akses Panel Pengelola Unit Toko',
+                            desc: 'Kelola katalog produk komoditas panen, perbarui ketersediaan stok, dan proses pengiriman pesanan.',
+                            btnText: 'Buka Panel Toko',
+                            btnClass: 'btn-primary',
+                            btnTo: '/admin'
+                        }
+                    }
+                };
+
+            default: // 'konsumen' or others
+                return {
+                    roleKey: 'konsumen',
+                    badgeText: 'Pelanggan Terverifikasi',
+                    badgeBg: 'rgba(34,197,94,0.12)',
+                    badgeColor: '#22c55e',
+                    heroBadgeIcon: Sprout,
+                    heroBadgeText: 'Profil Pelanggan • Polinela Agro Digital',
+                    headerSubtitle: 'Kelola identitas pribadi, foto profil, preferensi keamanan, dan alamat pengiriman pesanan Anda',
+                    banner: {
+                        gradient: 'linear-gradient(135deg, #14532d 0%, #15803d 50%, #047857 100%)',
+                        badgeTag: 'Pelanggan Polinela Agro',
+                        badgeTagClass: 'bg-light text-success',
+                        title: 'Pusat Pengaturan Akun & Alamat Belanja',
+                        desc: 'Pastikan nama penerima, nomor WhatsApp aktif, dan alamat pengiriman Anda terisi lengkap untuk mempercepat pengiriman komoditas segar langsung dari kebun Polinela ke rumah Anda.',
+                        buttonText: 'Lihat Riwayat Pesanan',
+                        buttonTo: '/pesanan',
+                        buttonIcon: Package
+                    },
+                    biodata: {
+                        title: 'Informasi Pribadi & Kontak Pengiriman',
+                        subtitle: 'Data ini digunakan untuk pencetakan label resi pengiriman, invoice pesanan, dan konfirmasi WhatsApp dari kurir.',
+                        namaLabel: 'Nama Lengkap Penerima',
+                        namaPlaceholder: 'Nama lengkap sesuai KTP penerima',
+                        emailHelp: 'Digunakan untuk login akun dan menerima notifikasi tagihan/resi belanja Anda.',
+                        phoneLabel: 'Nomor WhatsApp Aktif Penerima',
+                        phoneHelp: 'Kurir pengiriman akan menghubungi nomor ini saat mengantar produk ke alamat Anda.',
+                        alamatLabel: 'Alamat Pengiriman Default (Rumah / Kantor)',
+                        alamatPlaceholder: 'Nama Jalan, Nomor Rumah/Gedung, RT/RW, Kelurahan, Kecamatan, Kota/Kabupaten, Kode Pos'
+                    },
+                    keamanan: {
+                        subtitle: 'Biarkan kolom kata sandi kosong jika Anda tidak berencana mengganti kata sandi saat ini.'
+                    },
+                    akun: {
+                        unitLabel: 'Semua Unit Toko (Konsumen Pembeli)',
+                        actionCard: {
+                            bgClass: 'bg-success bg-opacity-10 border-success border-opacity-25',
+                            textClass: 'text-success',
+                            icon: ShoppingBag,
+                            title: 'Aktivitas Belanja & Pesanan Anda',
+                            desc: 'Lacak status paket komoditas yang sedang dikirim atau jelajahi produk hasil perkebunan terbaru.',
+                            btnText: 'Lihat Riwayat Pesanan',
+                            btnClass: 'btn-success',
+                            btnTo: '/pesanan'
+                        }
+                    }
+                };
         }
     };
 
-    const roleBadge = getRoleBadge(user?.role);
+    const roleConfig = getRoleProfileConfig(user);
+    const roleBadge = {
+        label: roleConfig.badgeText,
+        color: roleConfig.badgeColor,
+        bg: roleConfig.badgeBg
+    };
 
     return (
         <div className="py-4 min-vh-100" style={{ background: 'var(--bg-body)' }}>
@@ -311,7 +484,7 @@ const Profil = () => {
                             Pusat Pengaturan Akun & Profil
                         </h3>
                         <p className="mb-0 small text-muted">
-                            Kelola identitas, foto profil, preferensi keamanan, dan kontak resmi Polinela Agro Digital
+                            {roleConfig.headerSubtitle}
                         </p>
                     </div>
                     <button
@@ -336,7 +509,7 @@ const Profil = () => {
                     >
                         <div className="d-flex justify-content-between align-items-start">
                             <span className="small fw-semibold text-white d-flex align-items-center gap-1.5" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
-                                <Sprout size={15} /> Profil Resmi • Polinela Agro Digital
+                                <roleConfig.heroBadgeIcon size={15} /> {roleConfig.heroBadgeText}
                             </span>
 
                             <span className="small text-white-50 d-none d-sm-inline-flex align-items-center gap-1" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
@@ -348,10 +521,10 @@ const Profil = () => {
                         <button
                             type="button"
                             onClick={() => setShowBannerPicker(true)}
-                            className="liquid-glass-btn position-absolute bottom-0 end-0 mb-2 me-3 rounded-circle"
+                            className="banner-customize-btn position-absolute bottom-0 end-0 mb-2 me-3 rounded-circle shadow-sm"
                             style={{ 
-                                width: '40px',
-                                height: '40px',
+                                width: '38px',
+                                height: '38px',
                                 zIndex: 10
                             }}
                             title="Pilih tema & kustomisasi warna banner sampul"
@@ -519,23 +692,23 @@ const Profil = () => {
                         {/* TAB 1: BIODATA & KONTAK */}
                         {activeTab === 'biodata' && (
                             <div className="animate-fade-in">
-                                <h5 className="fw-bold mb-3 d-flex align-items-center gap-2" style={{ color: 'var(--text-heading)' }}>
+                                <h5 className="fw-bold mb-2 d-flex align-items-center gap-2" style={{ color: 'var(--text-heading)' }}>
                                     <User size={18} className="text-success" />
-                                    Informasi Pribadi & Kontak Pengiriman
+                                    {roleConfig.biodata.title}
                                 </h5>
                                 <p className="text-muted small mb-4">
-                                    Data ini digunakan untuk pencetakan label resi pengiriman, invoice pesanan, dan konfirmasi WhatsApp.
+                                    {roleConfig.biodata.subtitle}
                                 </p>
 
                                 <div className="mb-3">
                                     <label className="form-label small fw-semibold" style={{ color: 'var(--text-body)' }}>
-                                        Nama Lengkap <span className="text-danger">*</span>
+                                        {roleConfig.biodata.namaLabel} <span className="text-danger">*</span>
                                     </label>
                                     <input
                                         type="text"
                                         className="form-control rounded-3 py-2 px-3"
                                         required
-                                        placeholder="Nama lengkap sesuai KTP"
+                                        placeholder={roleConfig.biodata.namaPlaceholder}
                                         value={namaLengkap}
                                         onChange={(e) => setNamaLengkap(e.target.value)}
                                     />
@@ -556,13 +729,15 @@ const Profil = () => {
                                                 placeholder="email@domain.com"
                                             />
                                         </div>
-                                        <small className="text-muted" style={{ fontSize: '11px' }}>Digunakan untuk login akun dan menerima notifikasi email tagihan/resi</small>
+                                        <small className="text-muted" style={{ fontSize: '11px' }}>
+                                            {roleConfig.biodata.emailHelp}
+                                        </small>
                                     </div>
 
                                     <div className="col-md-6">
                                         <label className="form-label small fw-semibold" style={{ color: 'var(--text-body)' }}>
                                             <Phone size={14} className="me-1 text-success" />
-                                            Nomor WhatsApp Aktif
+                                            {roleConfig.biodata.phoneLabel}
                                         </label>
                                         <input
                                             type="text"
@@ -571,7 +746,9 @@ const Profil = () => {
                                             onChange={(e) => setNoHp(e.target.value)}
                                             placeholder="Contoh: 081234567890"
                                         />
-                                        <small className="text-muted" style={{ fontSize: '11px' }}>Untuk notifikasi resi kurir dan info panen</small>
+                                        <small className="text-muted" style={{ fontSize: '11px' }}>
+                                            {roleConfig.biodata.phoneHelp}
+                                        </small>
                                     </div>
                                 </div>
 
@@ -579,7 +756,7 @@ const Profil = () => {
                                     <div className="d-flex justify-content-between align-items-center mb-1">
                                         <label className="form-label small fw-semibold mb-0" style={{ color: 'var(--text-body)' }}>
                                             <MapPin size={14} className="me-1 text-danger" />
-                                            Alamat Pengiriman Default
+                                            {roleConfig.biodata.alamatLabel}
                                         </label>
                                         <button
                                             type="button"
@@ -595,7 +772,7 @@ const Profil = () => {
                                         rows="3"
                                         value={alamat}
                                         onChange={(e) => setAlamat(e.target.value)}
-                                        placeholder="Nama Jalan, Nomor Rumah, RT/RW, Kelurahan, Kecamatan, Kota/Kabupaten, Kode Pos"
+                                        placeholder={roleConfig.biodata.alamatPlaceholder}
                                     ></textarea>
                                 </div>
                             </div>
@@ -609,7 +786,7 @@ const Profil = () => {
                                     Ubah Kata Sandi Akun
                                 </h5>
                                 <p className="text-muted small mb-4">
-                                    Biarkan kolom kata sandi kosong jika Anda tidak berencana mengganti kata sandi saat ini.
+                                    {roleConfig.keamanan.subtitle}
                                 </p>
 
                                 <div className="row g-3 mb-3">
@@ -717,7 +894,7 @@ const Profil = () => {
                                         <div className="p-3 rounded-3 bg-body border">
                                             <span className="text-muted small d-block mb-1">Unit Usaha Perkebunan</span>
                                             <span className="fw-bold fs-6">
-                                                {user?.unit?.nama_unit || 'Semua Unit (Konsumen Umum)'}
+                                                {roleConfig.akun.unitLabel}
                                             </span>
                                         </div>
                                     </div>
@@ -729,6 +906,26 @@ const Profil = () => {
                                             </span>
                                         </div>
                                     </div>
+                                </div>
+
+                                {/* Role Specific Action Card */}
+                                <div className={`p-3 rounded-3 border d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 ${roleConfig.akun.actionCard.bgClass}`}>
+                                    <div>
+                                        <div className={`fw-bold d-flex align-items-center gap-2 ${roleConfig.akun.actionCard.textClass}`}>
+                                            <roleConfig.akun.actionCard.icon size={18} />
+                                            <span>{roleConfig.akun.actionCard.title}</span>
+                                        </div>
+                                        <div className="small text-muted mt-1">
+                                            {roleConfig.akun.actionCard.desc}
+                                        </div>
+                                    </div>
+                                    <Link 
+                                        to={roleConfig.akun.actionCard.btnTo} 
+                                        className={`btn btn-sm rounded-pill px-3 py-2 fw-semibold text-nowrap d-inline-flex align-items-center gap-1 shadow-sm ${roleConfig.akun.actionCard.btnClass}`}
+                                    >
+                                        <span>{roleConfig.akun.actionCard.btnText}</span>
+                                        <ArrowRight size={14} />
+                                    </Link>
                                 </div>
                             </div>
                         )}

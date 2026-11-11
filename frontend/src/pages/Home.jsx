@@ -2,13 +2,52 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import client from '../api/client';
 import ProductCard from '../components/ProductCard';
-import { ArrowRight, ShoppingBag, ShieldCheck, Truck, Award, Sparkles, Coffee, Package, Palmtree, Sprout, TreePine } from 'lucide-react';
+import { ArrowRight, ShoppingBag, ShieldCheck, Truck, Award, CheckCircle2, Coffee, Package, Palmtree, Sprout, TreePine } from 'lucide-react';
+
+// Static default slides placed in module scope to prevent re-allocation on each render cycle
+const DEFAULT_SLIDES = Object.freeze([
+    {
+        id: 1,
+        badge: 'Panen Unggulan Kampus Polinela',
+        judul: 'Panen Raya Kopi Robusta & Kakao Polinela',
+        subjudul: 'Nikmati cita rasa kopi petik merah dan produk olahan kakao asli kebun riset kampus vokasi terbaik Lampung.',
+        gambar: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1600&auto=format&fit=crop&q=80',
+        primaryText: 'Belanja Produk Sekarang',
+        primaryLink: '/katalog',
+        secondaryText: 'Tentang Kebun Riset',
+        secondaryLink: '#units-section',
+    },
+    {
+        id: 2,
+        badge: 'Teaching Factory Unggulan',
+        judul: 'Minyak Atsiri Alami & Pupuk Organik Hayati',
+        subjudul: 'Ekstrak murni minyak serai wangi dan pupuk bio-organik berkualitas hasil riset Teaching Factory Polinela.',
+        gambar: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=1600&auto=format&fit=crop&q=80',
+        primaryText: 'Jelajahi Produk Hortikultura',
+        primaryLink: '/katalog',
+        secondaryText: 'Lihat Unit Usaha',
+        secondaryLink: '#units-section',
+    },
+    {
+        id: 3,
+        badge: 'Inovasi Pertanian & Perkebunan',
+        judul: 'Bibit Sawit Unggul & Klon Kopi Pilihan',
+        subjudul: 'Bibit tanaman berkualitas tinggi hasil sertifikasi riset dosen dan mahasiswa perkebunan Polinela.',
+        gambar: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=1600&auto=format&fit=crop&q=80',
+        primaryText: 'Beli Bibit Berkualitas',
+        primaryLink: '/katalog',
+        secondaryText: 'Pelajari Produk',
+        secondaryLink: '#units-section',
+    },
+]);
 
 const Home = () => {
     const [units, setUnits] = useState([]);
     const [featuredProducts, setFeaturedProducts] = useState([]);
     const [banners, setBanners] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [currentSlide, setCurrentSlide] = useState(0);
+    const [isHovered, setIsHovered] = useState(false);
 
     useEffect(() => {
         const fetchHomeData = async () => {
@@ -57,46 +96,6 @@ const Home = () => {
         return <TreePine size={36} className="text-success" />;
     };
 
-    const [currentSlide, setCurrentSlide] = useState(0);
-    const [isHovered, setIsHovered] = useState(false);
-
-    // Default slides matching original design
-    const defaultSlides = [
-        {
-            id: 1,
-            badge: 'Panen Unggulan Kampus Polinela',
-            judul: 'Panen Raya Kopi Robusta & Kakao Polinela',
-            subjudul: 'Nikmati cita rasa kopi petik merah dan produk olahan kakao asli kebun riset kampus vokasi terbaik Lampung.',
-            gambar: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1600&auto=format&fit=crop&q=80',
-            primaryText: 'Belanja Produk Sekarang',
-            primaryLink: '/katalog',
-            secondaryText: 'Tentang Kebun Riset',
-            secondaryLink: '#units-section',
-        },
-        {
-            id: 2,
-            badge: 'Teaching Factory Unggulan',
-            judul: 'Lada Hitam Lampung & Minyak Atsiri Alami',
-            subjudul: 'Rempah aromatik berkualitas ekspor dan ekstrak serai wangi hasil produksi Teaching Factory Polinela.',
-            gambar: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=1600&auto=format&fit=crop&q=80',
-            primaryText: 'Jelajahi Rempah & Atsiri',
-            primaryLink: '/katalog',
-            secondaryText: 'Lihat Unit Usaha',
-            secondaryLink: '#units-section',
-        },
-        {
-            id: 3,
-            badge: 'Inovasi Pertanian & Perkebunan',
-            judul: 'Bibit Sawit Unggul & Klon Kopi Pilihan',
-            subjudul: 'Bibit tanaman berkualitas tinggi hasil sertifikasi riset dosen dan mahasiswa perkebunan Polinela.',
-            gambar: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=1600&auto=format&fit=crop&q=80',
-            primaryText: 'Beli Bibit Berkualitas',
-            primaryLink: '/katalog',
-            secondaryText: 'Pelajari Produk',
-            secondaryLink: '#units-section',
-        },
-    ];
-
     // Merge API banners with default slides if available
     const activeSlides = banners.length > 0
         ? banners.map((b, idx) => ({
@@ -106,13 +105,13 @@ const Home = () => {
             subjudul: b.subjudul || 'Hasil riset dan inovasi pertanian Politeknik Negeri Lampung.',
             gambar: b.gambar?.startsWith('http')
                 ? b.gambar
-                : (defaultSlides[idx % defaultSlides.length]?.gambar || defaultSlides[0].gambar),
+                : (DEFAULT_SLIDES[idx % DEFAULT_SLIDES.length]?.gambar || DEFAULT_SLIDES[0].gambar),
             primaryText: 'Belanja Produk Sekarang',
             primaryLink: b.link ? `/${b.link.replace(/^\//, '')}` : '/katalog',
             secondaryText: 'Tentang Kebun Riset',
             secondaryLink: '#units-section',
         }))
-        : defaultSlides;
+        : DEFAULT_SLIDES;
 
     // Auto-slide effect every 4.5 seconds
     useEffect(() => {
@@ -254,11 +253,11 @@ const Home = () => {
                     <div className="col-6 col-lg-3">
                         <div className="trust-pillar-card">
                             <div className="p-3 bg-danger bg-opacity-10 text-danger rounded-3 fs-4 d-flex align-items-center justify-content-center">
-                                <Sparkles size={26} />
+                                <CheckCircle2 size={26} />
                             </div>
                             <div>
                                 <h6 className="fw-bold mb-1 text-heading fs-6">Standar Vokasi Mutu</h6>
-                                <small className="text-muted d-block lh-sm" style={{ fontSize: '0.78rem' }}>Bebas bahan kimia pengawet sintetis</small>
+                                <small className="text-muted d-block lh-sm" style={{ fontSize: '0.78rem' }}>Produksi higienis laboratorium kebun riset</small>
                             </div>
                         </div>
                     </div>

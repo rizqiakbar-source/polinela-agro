@@ -4,7 +4,7 @@ import client from '../api/client';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { formatRupiah, getImageUrl } from '../utils/format';
-import { Store, CreditCard, Truck, Tag, ShieldCheck, ArrowLeft, CheckCircle2, MapPin, Compass, Zap, Package, ShoppingBag, ShoppingCart, Sparkles } from 'lucide-react';
+import { Store, CreditCard, Truck, Tag, ShieldCheck, ArrowLeft, CheckCircle2, MapPin, Compass, ShoppingBag, Package, ShoppingCart, Zap } from 'lucide-react';
 import Swal from 'sweetalert2';
 import LocationPickerModal from '../components/LocationPickerModal';
 import { triggerMidtransPayment } from '../utils/midtrans';
@@ -121,13 +121,15 @@ const Checkout = () => {
             if (res.data.status === 'success' || res.data.success) {
                 fetchCart(); // refresh cart in background
                 const responseData = res.data.data || res.data;
-                const { sharedTrxNumber, orders, whatsapp_url } = responseData;
+                const { orders } = responseData;
                 const snapToken = res.data.snap_token || responseData.snap_token;
                 const snapUrl = res.data.snap_url || responseData.snap_url;
                 const clientKey = res.data.client_key || responseData.client_key;
                 const firstOrderId = responseData.first_order_id || (orders && orders.length > 0 ? orders[0].id : '');
 
                 if (metodePembayaran === 'midtrans' && snapToken && firstOrderId) {
+                    const redirectToOrder = () => navigate(`/pesanan/${firstOrderId}`);
+
                     // Buka popup Midtrans SECARA INSTAN di halaman checkout (0 detik delay)
                     await triggerMidtransPayment(snapToken, {
                         snapUrl,
@@ -135,7 +137,7 @@ const Checkout = () => {
                         onSuccess: async (result) => {
                             try {
                                 await client.post(`/payment/finish/${firstOrderId}`, { payment_type: result.payment_type || 'midtrans' });
-                            } catch (e) {}
+                            } catch (_) {}
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Pembayaran Berhasil!',
@@ -143,17 +145,11 @@ const Checkout = () => {
                                 timer: 2000,
                                 showConfirmButton: false,
                             });
-                            navigate(`/pesanan/${firstOrderId}`);
+                            redirectToOrder();
                         },
-                        onPending: () => {
-                            navigate(`/pesanan/${firstOrderId}`);
-                        },
-                        onError: () => {
-                            navigate(`/pesanan/${firstOrderId}`);
-                        },
-                        onClose: () => {
-                            navigate(`/pesanan/${firstOrderId}`);
-                        }
+                        onPending: redirectToOrder,
+                        onError: redirectToOrder,
+                        onClose: redirectToOrder,
                     });
                     return;
                 }
@@ -385,11 +381,11 @@ const Checkout = () => {
                                             </div>
 
                                             {group.items.map((item) => (
-                                                <div key={item.id} className="d-flex justify-content-between align-items-center py-1 small">
-                                                    <span className="text-truncate" style={{ maxWidth: '350px' }}>
+                                                <div key={item.id} className="d-flex justify-content-between align-items-center py-1 small gap-2">
+                                                    <span className="text-truncate flex-grow-1" style={{ maxWidth: '65%' }}>
                                                         {item.product?.nama_produk} <span className="text-muted">x{item.jumlah}</span>
                                                     </span>
-                                                    <span className="fw-semibold text-dark">{formatRupiah(item.subtotal)}</span>
+                                                    <span className="fw-semibold text-dark text-nowrap">{formatRupiah(item.subtotal)}</span>
                                                 </div>
                                             ))}
                                         </div>
@@ -424,7 +420,7 @@ const Checkout = () => {
                                 </div>
                                 {appliedVoucher && (
                                     <div className="p-2 bg-success bg-opacity-10 text-success rounded-3 small d-flex align-items-center justify-content-between">
-                                        <span className="d-inline-flex align-items-center gap-1"><Sparkles size={14} /> Voucher: <strong>{appliedVoucher.kode_voucher}</strong></span>
+                                        <span className="d-inline-flex align-items-center gap-1"><Tag size={14} /> Voucher: <strong>{appliedVoucher.kode_voucher}</strong></span>
                                         <span className="fw-bold">-{formatRupiah(voucherDiscount)}</span>
                                     </div>
                                 )}

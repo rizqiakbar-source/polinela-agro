@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import client from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { formatRupiah, formatDate, getPaymentStatusBadge, getPaymentProofUrl } from '../../utils/format';
-import { CheckCircle2, XCircle, Search, Eye, AlertCircle, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, XCircle, Search, Eye, AlertCircle, ShieldCheck, FileText, Download, ExternalLink } from 'lucide-react';
 import Swal from 'sweetalert2';
 
 const AdminPayments = () => {
@@ -47,33 +47,33 @@ const AdminPayments = () => {
             confirmButtonColor: '#2d6a4f',
             confirmButtonText: 'Ya, Verifikasi Lunas',
             cancelButtonText: 'Batal',
+            showLoaderOnConfirm: true,
+            allowOutsideClick: () => !Swal.isLoading(),
+            preConfirm: async () => {
+                try {
+                    const res = await client.put(`/admin/payments/${payment.id}/verifikasi`);
+                    return res.data;
+                } catch (err) {
+                    Swal.showValidationMessage(err.response?.data?.message || 'Anda tidak memiliki hak akses untuk memverifikasi pembayaran unit ini.');
+                    return false;
+                }
+            }
         });
 
-        if (result.isConfirmed) {
-            try {
-                const res = await client.put(`/admin/payments/${payment.id}/verifikasi`);
-                if (res.data.status === 'success') {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Pembayaran Diverifikasi!',
-                        text: 'Status pesanan otomatis beralih menjadi Diproses.',
-                        timer: 1500,
-                        showConfirmButton: false,
-                    });
-                    fetchPayments();
-                }
-            } catch (err) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Gagal Verifikasi',
-                    text: err.response?.data?.message || 'Anda tidak memiliki hak akses untuk memverifikasi pembayaran unit ini.',
-                });
-            }
+        if (result.isConfirmed && result.value) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Pembayaran Diverifikasi!',
+                text: 'Status pesanan otomatis beralih menjadi Diproses.',
+                timer: 1500,
+                showConfirmButton: false,
+            });
+            fetchPayments();
         }
     };
 
     const handleTolak = async (payment) => {
-        const { value: alasan } = await Swal.fire({
+        const result = await Swal.fire({
             title: 'Tolak Pembayaran?',
             input: 'textarea',
             inputPlaceholder: 'Tuliskan alasan penolakan (misal: Bukti buram, nominal tidak cocok)...',
@@ -81,29 +81,29 @@ const AdminPayments = () => {
             confirmButtonColor: '#d33',
             confirmButtonText: 'Tolak Pembayaran',
             cancelButtonText: 'Batal',
+            showLoaderOnConfirm: true,
+            allowOutsideClick: () => !Swal.isLoading(),
             inputValidator: (val) => {
                 if (!val) return 'Alasan penolakan wajib diisi!';
             },
+            preConfirm: async (alasan) => {
+                try {
+                    const res = await client.put(`/admin/payments/${payment.id}/tolak`, { alasan });
+                    return res.data;
+                } catch (err) {
+                    Swal.showValidationMessage(err.response?.data?.message || 'Terjadi kesalahan sistem.');
+                    return false;
+                }
+            }
         });
 
-        if (alasan) {
-            try {
-                const res = await client.put(`/admin/payments/${payment.id}/tolak`, { alasan });
-                if (res.data.status === 'success') {
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'Pembayaran Ditolak',
-                        text: 'Status pembayaran berhasil ditolak.',
-                    });
-                    fetchPayments();
-                }
-            } catch (err) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Gagal Menolak',
-                    text: err.response?.data?.message || 'Terjadi kesalahan sistem.',
-                });
-            }
+        if (result.isConfirmed && result.value) {
+            Swal.fire({
+                icon: 'info',
+                title: 'Pembayaran Ditolak',
+                text: 'Status pembayaran berhasil ditolak.',
+            });
+            fetchPayments();
         }
     };
 
@@ -269,12 +269,51 @@ const AdminPayments = () => {
                                 <button type="button" className="btn-close" onClick={() => setPreviewProof(null)}></button>
                             </div>
                             <div className="modal-body text-center p-3">
-                                <img
-                                    src={previewProof.url}
-                                    alt="Bukti Bayar"
-                                    className="img-fluid rounded-3 border"
-                                    style={{ maxHeight: '420px' }}
-                                />
+                                {previewProof.url.toLowerCase().endsWith('.pdf') ? (
+                                    <div className="p-4 bg-light rounded-3 border text-center">
+                                        <FileText size={52} className="text-danger mb-2" />
+                                        <h6 className="fw-bold mb-1">Dokumen Bukti Transfer (PDF)</h6>
+                                        <p className="text-muted small mb-3">
+                                            Berkas bukti pembayaran dikirim oleh konsumen dalam format dokumen PDF resmi.
+                                        </p>
+                                        <div className="d-flex justify-content-center gap-2">
+                                            <a
+                                                href={previewProof.url}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="btn btn-primary btn-sm rounded-pill px-3 d-inline-flex align-items-center gap-1 shadow-sm fw-semibold"
+                                            >
+                                                <ExternalLink size={14} /> Buka PDF di Tab Baru
+                                            </a>
+                                            <a
+                                                href={previewProof.url}
+                                                download
+                                                className="btn btn-outline-secondary btn-sm rounded-pill px-3 d-inline-flex align-items-center gap-1"
+                                            >
+                                                <Download size={14} /> Unduh Berkas
+                                            </a>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <img
+                                            src={previewProof.url}
+                                            alt="Bukti Bayar"
+                                            className="img-fluid rounded-3 border"
+                                            style={{ maxHeight: '420px', objectFit: 'contain' }}
+                                        />
+                                        <div className="mt-2">
+                                            <a
+                                                href={previewProof.url}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="small text-primary text-decoration-none d-inline-flex align-items-center gap-1"
+                                            >
+                                                <ExternalLink size={12} /> Buka gambar resolusi penuh di tab baru ↗
+                                            </a>
+                                        </div>
+                                    </div>
+                                )}
                                 <div className="mt-3 small text-muted">
                                     Nominal Tagihan: <strong className="text-success">{formatRupiah(previewProof.payment.jumlah)}</strong> ({previewProof.payment.bank || 'Transfer Bank'})
                                 </div>

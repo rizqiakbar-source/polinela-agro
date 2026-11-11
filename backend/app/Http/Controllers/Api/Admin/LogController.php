@@ -12,7 +12,7 @@ class LogController extends Controller
     {
         $logs = ActivityLog::with('user')
             ->orderBy('id', 'desc')
-            ->paginate($request->get('per_page', 20));
+            ->paginate($request->get('per_page', 20))->withQueryString();
 
         return response()->json([
             'status'  => 'success',

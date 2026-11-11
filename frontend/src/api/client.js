@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
-export const STORAGE_BASE_URL = import.meta.env.VITE_STORAGE_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+export const STORAGE_BASE_URL = import.meta.env.VITE_STORAGE_BASE_URL || '';
 
 // In-memory cache store
 const apiCache = new Map();
@@ -19,14 +19,36 @@ export const clearApiCache = (pattern) => {
     }
 };
 
+const getCacheUserPrefix = () => {
+    const token = localStorage.getItem('token');
+    return token ? `user_${token.slice(-12)}` : 'guest';
+};
+
 const client = axios.create({
     baseURL: API_BASE_URL,
-    timeout: 15000, // 15s timeout ceiling (requests return in <200ms thanks to afterResponse)
+    timeout: 60000,
     headers: {
         'Accept': 'application/json',
         'X-Requested-With': 'XMLHttpRequest',
     },
 });
+
+const isDynamicEndpoint = (url = '') => {
+    const cleanUrl = url.toLowerCase();
+    return (
+        cleanUrl.includes('/cart') ||
+        cleanUrl.includes('/orders') ||
+        cleanUrl.includes('/payment') ||
+        cleanUrl.includes('/admin') ||
+        cleanUrl.includes('/user') ||
+        cleanUrl.includes('/auth') ||
+        cleanUrl.includes('/checkout') ||
+        cleanUrl.includes('/notifications') ||
+        cleanUrl.includes('/profil') ||
+        cleanUrl.includes('/profile') ||
+        cleanUrl.includes('/stock')
+    );
+};
 
 // Request interceptor: attach token & check cache
 client.interceptors.request.use((config) => {
@@ -35,9 +57,9 @@ client.interceptors.request.use((config) => {
         config.headers.Authorization = `Bearer ${token}`;
     }
 
-    // Auto-cache GET requests if not explicitly disabled
-    if (config.method === 'get' && config.cache !== false) {
-        const cacheKey = `${config.url}?${JSON.stringify(config.params || {})}`;
+    // Auto-cache GET requests if not explicitly disabled and not a dynamic user endpoint
+    if (config.method === 'get' && config.cache !== false && !isDynamicEndpoint(config.url)) {
+        const cacheKey = `${getCacheUserPrefix()}:${config.url}?${JSON.stringify(config.params || {})}`;
         const cached = apiCache.get(cacheKey);
 
         if (cached && (Date.now() - cached.timestamp < (config.ttl || DEFAULT_TTL))) {
@@ -69,8 +91,8 @@ client.interceptors.request.use((config) => {
 client.interceptors.response.use(
     (response) => {
         const config = response.config;
-        if (config && config.method === 'get' && config.cache !== false && response.status === 200) {
-            const cacheKey = `${config.url}?${JSON.stringify(config.params || {})}`;
+        if (config && config.method === 'get' && config.cache !== false && !isDynamicEndpoint(config.url) && response.status === 200) {
+            const cacheKey = `${getCacheUserPrefix()}:${config.url}?${JSON.stringify(config.params || {})}`;
             apiCache.set(cacheKey, {
                 data: response.data,
                 headers: response.headers,
@@ -81,6 +103,7 @@ client.interceptors.response.use(
     },
     (error) => {
         if (error.response && error.response.status === 401) {
+            clearApiCache();
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             if (!window.location.pathname.includes('/login')) {

@@ -1,43 +1,53 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { ThemeProvider } from './context/ThemeContext';
 
-// Components
+// Components (eager loaded for immediate navigation structure)
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminLayout from './components/AdminLayout';
 
-// Consumer Pages
-import Home from './pages/Home';
-import Katalog from './pages/Katalog';
-import DetailProduk from './pages/DetailProduk';
-import Keranjang from './pages/Keranjang';
-import Checkout from './pages/Checkout';
-import RiwayatPesanan from './pages/RiwayatPesanan';
-import DetailPesanan from './pages/DetailPesanan';
-import Profil from './pages/Profil';
-import Login from './pages/Login';
-import Register from './pages/Register';
+// Consumer Pages (Lazy Loaded for minimal initial bundle)
+const Home = lazy(() => import('./pages/Home'));
+const Katalog = lazy(() => import('./pages/Katalog'));
+const DetailProduk = lazy(() => import('./pages/DetailProduk'));
+const Keranjang = lazy(() => import('./pages/Keranjang'));
+const Checkout = lazy(() => import('./pages/Checkout'));
+const RiwayatPesanan = lazy(() => import('./pages/RiwayatPesanan'));
+const DetailPesanan = lazy(() => import('./pages/DetailPesanan'));
+const Profil = lazy(() => import('./pages/Profil'));
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const VerifyOtp = lazy(() => import('./pages/VerifyOtp'));
 
-// Admin Pages
-import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminProducts from './pages/admin/AdminProducts';
-import AdminOrders from './pages/admin/AdminOrders';
-import AdminPayments from './pages/admin/AdminPayments';
-import AdminReports from './pages/admin/AdminReports';
-import AdminUsers from './pages/admin/AdminUsers';
-import AdminUnits from './pages/admin/AdminUnits';
-import AdminCategories from './pages/admin/AdminCategories';
-import AdminVouchers from './pages/admin/AdminVouchers';
-import AdminBanners from './pages/admin/AdminBanners';
-import AdminReviews from './pages/admin/AdminReviews';
-import AdminSettings from './pages/admin/AdminSettings';
-import AdminLogs from './pages/admin/AdminLogs';
-import AdminOngkir from './pages/admin/AdminOngkir';
-import AdminBackup from './pages/admin/AdminBackup';
+// Admin Pages (Lazy Loaded on-demand only when admin visits /admin)
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const AdminProducts = lazy(() => import('./pages/admin/AdminProducts'));
+const AdminOrders = lazy(() => import('./pages/admin/AdminOrders'));
+const AdminPayments = lazy(() => import('./pages/admin/AdminPayments'));
+const AdminReports = lazy(() => import('./pages/admin/AdminReports'));
+const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
+const AdminUnits = lazy(() => import('./pages/admin/AdminUnits'));
+const AdminCategories = lazy(() => import('./pages/admin/AdminCategories'));
+const AdminVouchers = lazy(() => import('./pages/admin/AdminVouchers'));
+const AdminBanners = lazy(() => import('./pages/admin/AdminBanners'));
+const AdminReviews = lazy(() => import('./pages/admin/AdminReviews'));
+const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
+const AdminLogs = lazy(() => import('./pages/admin/AdminLogs'));
+const AdminOngkir = lazy(() => import('./pages/admin/AdminOngkir'));
+const AdminBackup = lazy(() => import('./pages/admin/AdminBackup'));
+
+// Lightweight Loading Spinner during route transitions
+const PageLoader = () => (
+    <div className="d-flex flex-column align-items-center justify-content-center min-vh-50 py-5">
+        <div className="spinner-border text-success" role="status" style={{ width: '2.5rem', height: '2.5rem' }}>
+            <span className="visually-hidden">Memuat halaman...</span>
+        </div>
+    </div>
+);
 
 // Layout wrapper for Public / Consumer pages
 const PublicLayout = ({ children }) => (
@@ -56,7 +66,8 @@ function App() {
         <AuthProvider>
             <CartProvider>
                 <BrowserRouter>
-                    <Routes>
+                    <Suspense fallback={<PageLoader />}>
+                        <Routes>
                         {/* Public & Consumer Routes */}
                         <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
                         <Route path="/katalog" element={<PublicLayout><Katalog /></PublicLayout>} />
@@ -99,6 +110,7 @@ function App() {
                         {/* Auth Routes */}
                         <Route path="/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
+                        <Route path="/verify-otp" element={<VerifyOtp />} />
 
                         {/* Admin Routes */}
                         <Route 
@@ -194,6 +206,7 @@ function App() {
                         {/* Fallback 404 */}
                         <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>
+                    </Suspense>
                 </BrowserRouter>
             </CartProvider>
         </AuthProvider>

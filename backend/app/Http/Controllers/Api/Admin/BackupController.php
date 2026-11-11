@@ -12,6 +12,10 @@ class BackupController extends Controller
 {
     public function index(Request $request)
     {
+        if (!$request->user() || $request->user()->role !== 'superadmin') {
+            return response()->json(['status' => 'error', 'success' => false, 'message' => 'Akses ditolak: Hanya Superadmin yang berhak mengakses cadangan basis data.'], 403);
+        }
+
         $backupDir = storage_path('app/backups');
         if (!File::exists($backupDir)) {
             File::makeDirectory($backupDir, 0755, true);
@@ -41,6 +45,10 @@ class BackupController extends Controller
 
     public function create(Request $request)
     {
+        if (!$request->user() || $request->user()->role !== 'superadmin') {
+            return response()->json(['status' => 'error', 'success' => false, 'message' => 'Akses ditolak: Hanya Superadmin yang berhak membuat cadangan basis data.'], 403);
+        }
+
         $backupDir = storage_path('app/backups');
         if (!File::exists($backupDir)) {
             File::makeDirectory($backupDir, 0755, true);

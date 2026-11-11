@@ -19,6 +19,15 @@ export const formatDate = (dateString) => {
     }).format(date);
 };
 
+export const formatDateShort = (dateString) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return String(dateString).slice(0, 10);
+    return new Intl.DateTimeFormat('id-ID', {
+        dateStyle: 'medium',
+    }).format(date);
+};
+
 export const getImageUrl = (path, defaultPlaceholder = 'https://placehold.co/400x300?text=Produk+Agro') => {
     if (!path) return defaultPlaceholder;
     if (path.startsWith('http://') || path.startsWith('https://')) return path;

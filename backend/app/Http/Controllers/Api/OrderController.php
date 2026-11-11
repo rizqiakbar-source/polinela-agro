@@ -29,7 +29,7 @@ class OrderController extends Controller
             }
         }
 
-        $orders = $query->orderBy('id', 'desc')->paginate($request->get('per_page', 10));
+        $orders = $query->orderBy('id', 'desc')->paginate($request->get('per_page', 10))->withQueryString();
 
         return response()->json([
             'status'  => 'success',
@@ -64,9 +64,17 @@ class OrderController extends Controller
             ], 404);
         }
 
-        // Hak akses: hanya pemilik atau admin
-        if ($order->user_id !== $user->id && !in_array($user->role, ['superadmin', 'admin_unit', 'pimpinan'])) {
-            return response()->json(['status' => 'error', 'success' => false, 'message' => 'Akses ditolak.'], 403);
+        // Hak akses: hanya pemilik pesanan atau admin berwenang (superadmin, pimpinan, atau admin unit bersangkutan)
+        $isOwner = ($order->user_id === $user->id);
+        $isAuthorizedAdmin = in_array($user->role, ['superadmin', 'pimpinan']) ||
+            ($user->role === 'admin_unit' && $order->unit_id == $user->unit_id);
+
+        if (!$isOwner && !$isAuthorizedAdmin) {
+            return response()->json([
+                'status'  => 'error',
+                'success' => false,
+                'message' => 'Akses ditolak: Anda tidak memiliki wewenang untuk mengakses data pesanan ini.',
+            ], 403);
         }
 
         // Auto-sync payment status jika pesanan sudah diproses/dikirim/selesai
@@ -116,7 +124,12 @@ class OrderController extends Controller
         $orderId = $id ?? $request->get('order_id');
 
         $request->validate([
-            'bukti_bayar' => 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'bukti_bayar' => 'required|file|mimes:jpg,jpeg,png,webp,pdf|max:5120',
+        ], [
+            'bukti_bayar.required' => 'File bukti pembayaran wajib diunggah.',
+            'bukti_bayar.file'     => 'Berkas bukti pembayaran tidak valid.',
+            'bukti_bayar.mimes'    => 'Format file bukti pembayaran hanya diperbolehkan: JPG, JPEG, PNG, WEBP, atau PDF.',
+            'bukti_bayar.max'      => 'Ukuran file bukti pembayaran maksimal adalah 5MB.',
         ]);
 
         $user = $request->user();
@@ -131,8 +144,19 @@ class OrderController extends Controller
             return response()->json(['status' => 'error', 'success' => false, 'message' => 'Pesanan tidak ditemukan.'], 404);
         }
 
+        $payment = Payment::where('order_id', $order->id)->first();
+
+        // Hapus file bukti lama jika ada (re-upload / revisi bukti pembayaran)
+        if ($payment && $payment->bukti_bayar) {
+            $oldFilePath = public_path('uploads/bukti_bayar/' . $payment->bukti_bayar);
+            if (file_exists($oldFilePath) && is_file($oldFilePath)) {
+                @unlink($oldFilePath);
+            }
+        }
+
         $file = $request->file('bukti_bayar');
-        $filename = 'bukti_' . $order->order_number . '_' . time() . '.' . $file->getClientOriginalExtension();
+        $ext = strtolower($file->guessExtension() ?: $file->getClientOriginalExtension() ?: 'jpg');
+        $filename = 'bukti_' . $order->order_number . '_' . time() . '.' . $ext;
         
         $uploadDir = public_path('uploads/bukti_bayar');
         if (!file_exists($uploadDir)) {
@@ -140,39 +164,59 @@ class OrderController extends Controller
         }
         $file->move($uploadDir, $filename);
 
-        $payment = Payment::where('order_id', $order->id)->first();
         $bank = $request->get('bank_asal') ?? $payment?->bank ?? 'Transfer Bank';
         $atasNama = $request->get('atas_nama_pengirim') ?? $user->nama;
 
-        // Jika bagian dari multi-store single payment, update seluruh order di transaksi yang sama
-        if ($payment && !empty($payment->no_transaksi)) {
-            $relatedPayments = Payment::where('no_transaksi', $payment->no_transaksi)->get();
+        \Illuminate\Support\Facades\DB::transaction(function () use ($payment, $order, $filename, $bank, $atasNama) {
+            // Jika bagian dari multi-store single payment, update seluruh order di transaksi yang sama
+            if ($payment && !empty($payment->no_transaksi)) {
+                $relatedPayments = Payment::where('no_transaksi', $payment->no_transaksi)->get();
 
-            foreach ($relatedPayments as $rp) {
-                $rp->update([
-                    'bukti_bayar' => $filename,
-                    'bank'        => $bank,
-                    'atas_nama'   => $atasNama,
-                    'status'      => 'menunggu_konfirmasi',
-                    'updated_at'  => now(),
-                ]);
+                foreach ($relatedPayments as $rp) {
+                    // Hapus berkas lama jika berbeda
+                    if ($rp->bukti_bayar && $rp->bukti_bayar !== $filename) {
+                        $oldRp = public_path('uploads/bukti_bayar/' . $rp->bukti_bayar);
+                        if (file_exists($oldRp) && is_file($oldRp)) {
+                            @unlink($oldRp);
+                        }
+                    }
 
-                $relOrder = Order::find($rp->order_id);
-                if ($relOrder) {
-                    $relOrder->update(['status' => 'menunggu_verifikasi']);
+                    $rp->update([
+                        'bukti_bayar' => $filename,
+                        'bank'        => $bank,
+                        'atas_nama'   => $atasNama,
+                        'status'      => 'menunggu_konfirmasi',
+                        'updated_at'  => now(),
+                    ]);
+
+                    $relOrder = Order::find($rp->order_id);
+                    if ($relOrder) {
+                        $relOrder->update(['status' => 'menunggu_verifikasi']);
+                    }
                 }
+            } else {
+                if ($payment) {
+                    $payment->update([
+                        'bukti_bayar' => $filename,
+                        'bank'        => $bank,
+                        'atas_nama'   => $atasNama,
+                        'status'      => 'menunggu_konfirmasi',
+                    ]);
+                } else {
+                    $payment = Payment::create([
+                        'order_id'     => $order->id,
+                        'no_transaksi' => 'TRX-' . strtoupper(\Illuminate\Support\Str::random(10)),
+                        'metode'       => 'transfer_bank',
+                        'bank'         => $bank,
+                        'atas_nama'    => $atasNama,
+                        'jumlah'       => $order->grand_total,
+                        'bukti_bayar'  => $filename,
+                        'status'       => 'menunggu_konfirmasi',
+                    ]);
+                }
+                $order->update(['status' => 'menunggu_verifikasi']);
             }
-        } else {
-            if ($payment) {
-                $payment->update([
-                    'bukti_bayar' => $filename,
-                    'bank'        => $bank,
-                    'atas_nama'   => $atasNama,
-                    'status'      => 'menunggu_konfirmasi',
-                ]);
-            }
-            $order->update(['status' => 'menunggu_verifikasi']);
-        }
+        });
 
         ActivityLog::log('Upload Bukti', 'Pembayaran', "Upload bukti bayar untuk pesanan #{$order->order_number}");
 
@@ -202,7 +246,8 @@ class OrderController extends Controller
     public function konfirmasiTerima(Request $request, $id)
     {
         $user = $request->user();
-        $order = Order::where(fn($q) => $q->where('id', $id)->orWhere('order_number', $id))
+        $order = Order::with('shipping')
+            ->where(fn($q) => $q->where('id', $id)->orWhere('order_number', $id))
             ->where('user_id', $user->id)
             ->first();
 
@@ -210,57 +255,87 @@ class OrderController extends Controller
             return response()->json(['status' => 'error', 'success' => false, 'message' => 'Pesanan tidak ditemukan.'], 404);
         }
 
-        $order->update(['status' => 'selesai']);
+        // Validasi State Machine: Hanya pesanan yang sedang 'dikirim' yang dapat diselesaikan oleh konsumen
+        if ($order->status !== 'dikirim') {
+            return response()->json([
+                'status'  => 'error',
+                'success' => false,
+                'message' => 'Pesanan hanya dapat dikonfirmasi selesai jika statusnya sedang dalam pengiriman (dikirim). Status saat ini: ' . $order->status,
+            ], 400);
+        }
 
-        ActivityLog::log('Konfirmasi Terima', 'Pesanan', "Konsumen mengonfirmasi pesanan #{$order->order_number} telah diterima.");
+        \Illuminate\Support\Facades\DB::transaction(function () use ($order) {
+            $order->update(['status' => 'selesai']);
+            if ($order->shipping) {
+                $order->shipping->update(['status' => 'sampai']);
+            }
+            ActivityLog::log('Konfirmasi Terima', 'Pesanan', "Konsumen mengonfirmasi pesanan #{$order->order_number} telah diterima.");
+        });
 
         return response()->json([
             'status'  => 'success',
             'success' => true,
             'message' => 'Terima kasih! Pesanan telah selesai.',
-            'data'    => $order,
+            'data'    => $order->fresh(['shipping', 'payment']),
         ]);
     }
 
     public function batalkan(Request $request, $id)
     {
         $user = $request->user();
-        $order = Order::with('details')
-            ->where(fn($q) => $q->where('id', $id)->orWhere('order_number', $id))
-            ->where('user_id', $user->id)
-            ->first();
 
-        if (!$order || !in_array($order->status, ['pending', 'menunggu_pembayaran'])) {
-            return response()->json(['status' => 'error', 'success' => false, 'message' => 'Pesanan tidak dapat dibatalkan.'], 400);
-        }
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($request, $id, $user) {
+            // Pessimistic lock untuk mengunci baris pesanan & mencegah race condition pembatalan ganda
+            $order = Order::with('details')
+                ->where(fn($q) => $q->where('id', $id)->orWhere('order_number', $id))
+                ->where('user_id', $user->id)
+                ->lockForUpdate()
+                ->first();
 
-        // Kembalikan stok produk
-        foreach ($order->details as $d) {
-            $product = Product::find($d->product_id);
-            if ($product) {
-                $product->increment('stok', $d->qty);
-                $product->decrement('total_terjual', $d->qty);
-
-                Stock::create([
-                    'product_id' => $product->id,
-                    'tipe'       => 'masuk',
-                    'qty'        => $d->qty,
-                    'sisa_stok'  => $product->fresh()->stok,
-                    'keterangan' => "Pengembalian stok dari pembatalan pesanan #{$order->order_number}",
-                    'user_id'    => $user->id,
-                ]);
+            if (!$order) {
+                return response()->json([
+                    'status'  => 'error',
+                    'success' => false,
+                    'message' => 'Pesanan tidak ditemukan.',
+                ], 404);
             }
-        }
 
-        $order->update(['status' => 'dibatalkan']);
+            if (!in_array($order->status, ['pending', 'menunggu_pembayaran'])) {
+                return response()->json([
+                    'status'  => 'error',
+                    'success' => false,
+                    'message' => 'Pesanan tidak dapat dibatalkan (sudah dibatalkan atau sedang diproses).',
+                ], 400);
+            }
 
-        ActivityLog::log('Batal Pesanan', 'Pesanan', "Konsumen membatalkan pesanan #{$order->order_number}");
+            // Atomic status update: Hanya request pertama yang mendapat affected row = 1
+            $affected = Order::where('id', $order->id)
+                ->whereIn('status', ['pending', 'menunggu_pembayaran'])
+                ->update(['status' => 'dibatalkan']);
 
-        return response()->json([
-            'status'  => 'success',
-            'success' => true,
-            'message' => 'Pesanan berhasil dibatalkan dan stok produk telah dikembalikan.',
-        ]);
+            if ($affected === 0) {
+                return response()->json([
+                    'status'  => 'error',
+                    'success' => false,
+                    'message' => 'Pesanan telah dibatalkan sebelumnya.',
+                ], 400);
+            }
+
+            // Kembalikan stok produk via StockService tepat 1 kali
+            \App\Services\StockService::restoreOrderStock(
+                $order,
+                "Pengembalian stok dari pembatalan pesanan oleh konsumen #{$order->order_number}",
+                $user->id
+            );
+
+            ActivityLog::log('Batal Pesanan', 'Pesanan', "Konsumen membatalkan pesanan #{$order->order_number}");
+
+            return response()->json([
+                'status'  => 'success',
+                'success' => true,
+                'message' => 'Pesanan berhasil dibatalkan dan stok produk telah dikembalikan.',
+            ]);
+        });
     }
 
     public function whatsappLink(Request $request, $id)
@@ -273,7 +348,19 @@ class OrderController extends Controller
             ->first();
 
         if (!$order) {
-            return response()->json(['status' => 'error', 'message' => 'Pesanan tidak ditemukan.'], 404);
+            return response()->json(['status' => 'error', 'success' => false, 'message' => 'Pesanan tidak ditemukan.'], 404);
+        }
+
+        $isOwner = ($order->user_id === $user->id);
+        $isAuthorizedAdmin = in_array($user->role, ['superadmin', 'pimpinan']) ||
+            ($user->role === 'admin_unit' && $order->unit_id == $user->unit_id);
+
+        if (!$isOwner && !$isAuthorizedAdmin) {
+            return response()->json([
+                'status'  => 'error',
+                'success' => false,
+                'message' => 'Akses ditolak: Anda tidak memiliki wewenang untuk melihat kontak pesanan ini.',
+            ], 403);
         }
 
         $url = \App\Services\NotificationService::generateWhatsAppUrl($order, $target);
@@ -292,7 +379,19 @@ class OrderController extends Controller
             ->first();
 
         if (!$order) {
-            return response()->json(['status' => 'error', 'message' => 'Pesanan tidak ditemukan.'], 404);
+            return response()->json(['status' => 'error', 'success' => false, 'message' => 'Pesanan tidak ditemukan.'], 404);
+        }
+
+        $isOwner = ($order->user_id === $user->id);
+        $isAuthorizedAdmin = in_array($user->role, ['superadmin', 'pimpinan']) ||
+            ($user->role === 'admin_unit' && $order->unit_id == $user->unit_id);
+
+        if (!$isOwner && !$isAuthorizedAdmin) {
+            return response()->json([
+                'status'  => 'error',
+                'success' => false,
+                'message' => 'Akses ditolak: Anda tidak memiliki wewenang untuk melihat kontak pesanan ini.',
+            ], 403);
         }
 
         $channel = $request->get('channel', 'all'); // 'email' | 'whatsapp' | 'all'

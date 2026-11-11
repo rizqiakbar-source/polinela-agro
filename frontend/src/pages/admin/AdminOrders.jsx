@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import client from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
-import { formatRupiah, formatDate, getOrderStatusBadge, getPaymentStatusBadge } from '../../utils/format';
-import { Eye, Truck, CheckCircle2, XCircle, Search, Edit3, Printer, Package, MessageCircle, Send } from 'lucide-react';
+import { formatRupiah, formatDate, getOrderStatusBadge, getPaymentStatusBadge, getPaymentProofUrl } from '../../utils/format';
+import { Eye, Truck, CheckCircle2, XCircle, Search, Edit3, Printer, Package, MessageCircle, Send, FileText, Download, ExternalLink } from 'lucide-react';
 import Swal from 'sweetalert2';
 import ReceiptModal from '../../components/ReceiptModal';
 
@@ -60,18 +60,11 @@ const AdminOrders = () => {
         try {
             const res = await client.put(`/admin/orders/${selectedOrder.id}/status`, {
                 status: statusUpdate,
+                no_resi: noResi,
                 catatan_admin: catatanAdmin,
             });
 
             if (res.data.status === 'success' || res.data.success) {
-                // If resi also changed
-                if (noResi !== (selectedOrder.shipping?.no_resi || '')) {
-                    await client.put(`/admin/orders/${selectedOrder.id}/resi`, {
-                        no_resi: noResi,
-                        status_pengiriman: statusUpdate === 'dikirim' ? 'dikirim' : (statusUpdate === 'selesai' ? 'diterima' : 'diproses'),
-                    });
-                }
-
                 const waUrl = res.data.whatsapp_url;
 
                 Swal.fire({
@@ -240,7 +233,7 @@ const AdminOrders = () => {
         const intl = clean.startsWith('0') ? '62' + clean.substring(1) : (clean.startsWith('8') ? '62' + clean : clean);
         const orderNum = order.order_number || order.no_pesanan || `#${order.id}`;
         const name = order.shipping?.penerima_nama || order.shipping?.nama_penerima || order.user?.nama || 'Pelanggan';
-        const msg = `Halo Kak ${name},\nKami dari pengelola unit ${order.unit?.nama_unit || 'Polinela Agro Digital'}.\n\nMengenai pesanan Anda #${orderNum}:\nStatus saat ini: *${order.status.toUpperCase()}*.\n${order.shipping?.no_resi ? `Nomor Resi: *${order.shipping.no_resi}*\n` : ''}\nTerima kasih telah berbelanja di Teaching Factory Polinela Agro! 🌱`;
+        const msg = `Halo Kak ${name},\nKami dari pengelola unit ${order.unit?.nama_unit || 'Polinela Agro Digital'}.\n\nMengenai pesanan Anda #${orderNum}:\nStatus saat ini: *${order.status.toUpperCase()}*.\n${order.shipping?.no_resi ? `Nomor Resi: *${order.shipping.no_resi}*\n` : ''}\nTerima kasih telah berbelanja di Teaching Factory Polinela Agro.`;
         window.open(`https://wa.me/${intl}?text=${encodeURIComponent(msg)}`, '_blank');
     };
 
@@ -465,6 +458,79 @@ const AdminOrders = () => {
                                             </div>
                                         </div>
                                     )}
+
+                                    {/* Payment Information & Proof */}
+                                    <div className="p-3 border rounded-3 mb-3 small bg-light">
+                                        <div className="d-flex justify-content-between align-items-center mb-1">
+                                            <h6 className="fw-bold small mb-0">Informasi Pembayaran & Dokumen Bukti:</h6>
+                                            <span className="badge bg-secondary">{selectedOrder.payment?.metode || 'Transfer Bank'}</span>
+                                        </div>
+                                        <div className="text-muted mb-2">
+                                            Total Tagihan: <strong className="text-success">{formatRupiah(selectedOrder.grand_total)}</strong> | Status: <strong className="text-dark text-capitalize">{selectedOrder.payment?.status || 'Belum Bayar'}</strong>
+                                        </div>
+
+                                        {selectedOrder.payment?.bukti_bayar ? (
+                                            <div className="p-2.5 bg-white rounded-3 border">
+                                                {selectedOrder.payment.bukti_bayar.toLowerCase().endsWith('.pdf') ? (
+                                                    <div className="d-flex align-items-center justify-content-between">
+                                                        <div className="d-flex align-items-center gap-2 overflow-hidden">
+                                                            <FileText size={24} className="text-danger flex-shrink-0" />
+                                                            <span className="text-truncate fw-semibold text-dark small" title={selectedOrder.payment.bukti_bayar}>
+                                                                {selectedOrder.payment.bukti_bayar}
+                                                            </span>
+                                                        </div>
+                                                        <div className="d-flex gap-1 flex-shrink-0">
+                                                            <a
+                                                                href={getPaymentProofUrl(selectedOrder.payment.bukti_bayar)}
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                                className="btn btn-sm btn-primary rounded-pill px-2.5 d-inline-flex align-items-center gap-1"
+                                                            >
+                                                                <ExternalLink size={12} /> Buka PDF
+                                                            </a>
+                                                            <a
+                                                                href={getPaymentProofUrl(selectedOrder.payment.bukti_bayar)}
+                                                                download
+                                                                className="btn btn-sm btn-outline-secondary rounded-pill px-2 d-inline-flex align-items-center gap-1"
+                                                            >
+                                                                <Download size={12} /> Unduh
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="text-center">
+                                                        <a
+                                                            href={getPaymentProofUrl(selectedOrder.payment.bukti_bayar)}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            className="d-inline-block position-relative border rounded-2 overflow-hidden"
+                                                        >
+                                                            <img
+                                                                src={getPaymentProofUrl(selectedOrder.payment.bukti_bayar)}
+                                                                alt="Bukti Transfer"
+                                                                className="img-fluid rounded-2"
+                                                                style={{ maxHeight: '160px', objectFit: 'contain' }}
+                                                            />
+                                                        </a>
+                                                        <div className="mt-1">
+                                                            <a
+                                                                href={getPaymentProofUrl(selectedOrder.payment.bukti_bayar)}
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                                className="small text-primary text-decoration-none d-inline-flex align-items-center gap-1"
+                                                            >
+                                                                <ExternalLink size={11} /> Buka gambar resolusi penuh di tab baru
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div className="text-muted fst-italic small">
+                                                Belum ada berkas bukti pembayaran manual yang diunggah (atau transaksi diproses otomatis via Midtrans).
+                                            </div>
+                                        )}
+                                    </div>
 
                                     <div className="row g-3">
                                         <div className="col-md-6">

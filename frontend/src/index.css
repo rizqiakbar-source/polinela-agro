@@ -59,18 +59,16 @@
   --transition-smooth: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ============================================
-   DARK THEME
-   ============================================ */
+/* Dark theme */
 [data-theme="dark"] {
-  /* Primary / Brand — softer emerald, less neon */
+  /* Primary / Brand: softer emerald, less neon */
   --color-primary: #3fb950;
   --color-primary-dark: #238636;
   --color-primary-light: #56d364;
   --color-primary-glow: rgba(63, 185, 80, 0.15);
   --color-accent: #e3b341;
 
-  /* Surfaces — GitHub-inspired dark palette */
+  /* Surfaces: dark palette */
   --bg-body: #0d1117;
   --bg-card: #161b22;
   --bg-card-hover: #1c2333;
@@ -80,23 +78,23 @@
   --bg-badge: rgba(63, 185, 80, 0.10);
   --bg-section-alt: #111921;
 
-  /* Borders — subtle, not harsh */
+  /* Borders: subtle, not harsh */
   --border-color: #21262d;
   --border-color-subtle: #1b2028;
 
-  /* Text — warm, easy on eyes */
+  /* Text: warm, easy on eyes */
   --text-heading: #e6edf3;
   --text-body: #b1bac4;
   --text-muted: #7d8590;
   --text-on-primary: #ffffff;
 
-  /* Shadows — deep, not jarring */
+  /* Shadows: deep, not jarring */
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.35), 0 0 1px rgba(0,0,0,0.2);
   --shadow-md: 0 4px 14px -2px rgba(0,0,0,0.45);
   --shadow-lg: 0 12px 28px -6px rgba(0,0,0,0.55);
   --shadow-glow: 0 0 20px rgba(63, 185, 80, 0.08);
 
-  /* Gradients — deeper, moodier */
+  /* Gradients: deeper */
   --gradient-primary: linear-gradient(135deg, #238636 0%, #196c2e 50%, #144620 100%);
   --gradient-hero: linear-gradient(135deg, #0d1117 0%, #0f1d15 40%, #132a1c 100%);
   --gradient-card: linear-gradient(145deg, #161b22 0%, #1c2333 100%);
@@ -757,52 +755,27 @@ header.sticky-top {
   -webkit-backdrop-filter: blur(8px);
 }
 
-/* ============================================
-   LIQUID GLASSMORPHISM EFFECTS
-   ============================================ */
-.liquid-glass-btn {
-  background: rgba(255, 255, 255, 0.22);
-  backdrop-filter: blur(16px) saturate(190%);
-  -webkit-backdrop-filter: blur(16px) saturate(190%);
-  border: 1.5px solid rgba(255, 255, 255, 0.65);
-  box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.25), inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.75), 0 0 14px rgba(255, 255, 255, 0.2);
+/* Action button for profile banner customization */
+.banner-customize-btn {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   color: #ffffff;
-  position: relative;
-  overflow: hidden;
-  cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
 }
 
-.liquid-glass-btn::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.45) 0%, transparent 60%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
-
-.liquid-glass-btn:hover {
-  transform: translateY(-2px) scale(1.1);
-  background: rgba(255, 255, 255, 0.35);
-  border-color: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 12px 36px 0 rgba(0, 0, 0, 0.35), inset 0 2px 2px 0 rgba(255, 255, 255, 0.9), 0 0 24px rgba(255, 255, 255, 0.45);
+.banner-customize-btn:hover {
+  background: rgba(0, 0, 0, 0.55);
+  border-color: rgba(255, 255, 255, 0.8);
+  transform: translateY(-1px);
   color: #ffffff;
 }
 
-.liquid-glass-btn:hover::before {
-  opacity: 1;
-}
-
-.liquid-glass-btn:active {
-  transform: translateY(0) scale(0.95);
+.banner-customize-btn:active {
+  transform: translateY(0);
 }
 
 /* ============================================
@@ -1097,6 +1070,17 @@ header.sticky-top {
   border: 1px solid rgba(226, 232, 240, 0.8) !important;
   box-shadow: 0 20px 50px -10px rgba(21, 128, 61, 0.08), 0 0 1px rgba(0, 0, 0, 0.05) !important;
   transition: all var(--transition-normal);
+  max-width: 440px !important;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 576px) {
+  .polinela-auth-card {
+    max-width: 100% !important;
+    border-radius: 16px !important;
+  }
 }
 
 [data-theme="dark"] .polinela-auth-card {
@@ -1442,10 +1426,49 @@ header.sticky-top {
     display: none !important;
   }
 
-  /* Hide everything on page when printing modal except the receipt dialog */
-  body > #root > *:not(.receipt-modal-backdrop) {
+  /* Only hide outside elements when a receipt modal backdrop is actively rendered */
+  body:has(.receipt-modal-backdrop) > #root > *:not(.receipt-modal-backdrop) {
     display: none !important;
   }
 }
+
+/* ============================================
+   RESPONSIVE MOBILE AUDIT HELPERS
+   ============================================ */
+@media (max-width: 768px) {
+  .card:not(.polinela-auth-card) {
+    max-width: 100%;
+  }
+}
+
+.card {
+  min-width: 0;
+}
+
+/* Clean browser autofill styling */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important;
+  -webkit-text-fill-color: var(--text-main) !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+[data-theme="dark"] input:-webkit-autofill,
+[data-theme="dark"] input:-webkit-autofill:hover, 
+[data-theme="dark"] input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px #161b22 inset !important;
+  -webkit-text-fill-color: #e6edf3 !important;
+}
+
+.table-responsive {
+  max-width: 100% !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+img, svg {
+  max-width: 100%;
+}
+
 
 

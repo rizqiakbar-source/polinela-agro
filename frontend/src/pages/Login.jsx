@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { Lock, Mail, Eye, EyeOff, Sparkles, Sun, Moon, ShieldCheck, BarChart3, Coffee, Package, Leaf, FlaskConical } from 'lucide-react';
+import { Lock, Mail, Eye, EyeOff, Sun, Moon, ShieldCheck, BarChart3, Coffee, Package, Palmtree, FlaskConical, User, ShoppingBag } from 'lucide-react';
 
 const Login = () => {
     const { login } = useAuth();
@@ -22,8 +22,10 @@ const Login = () => {
         { role: 'Pimpinan', icon: BarChart3, email: 'pimpinan@polinela.ac.id', pass: 'pimpinan123', color: 'btn-outline-primary' },
         { role: 'Admin Kopi', icon: Coffee, email: 'adminkopi@polinela.ac.id', pass: 'admin123', color: 'btn-outline-success' },
         { role: 'Admin Kakao', icon: Package, email: 'adminkakao@polinela.ac.id', pass: 'admin123', color: 'btn-outline-warning text-dark' },
-        { role: 'Admin Lada', icon: Leaf, email: 'adminlada@polinela.ac.id', pass: 'admin123', color: 'btn-outline-info' },
-        { role: 'Admin Atsiri & Olahan', icon: FlaskConical, email: 'adminatsiri@polinela.ac.id', pass: 'admin123', color: 'btn-outline-dark' },
+        { role: 'Admin Sawit', icon: Palmtree, email: 'adminsawit@polinela.ac.id', pass: 'admin123', color: 'btn-outline-success' },
+        { role: 'Admin Atsiri', icon: FlaskConical, email: 'adminatsiri@polinela.ac.id', pass: 'admin123', color: 'btn-outline-dark' },
+        { role: 'Konsumen (Budi)', icon: ShoppingBag, email: 'budi@gmail.com', pass: 'konsumen123', color: 'btn-outline-success' },
+        { role: 'Konsumen (Siti)', icon: User, email: 'siti@gmail.com', pass: 'konsumen123', color: 'btn-outline-secondary' },
     ];
 
     const fillDemo = (accEmail, accPass) => {
@@ -37,12 +39,19 @@ const Login = () => {
         const result = await login(email, password);
         setSubmitting(false);
 
-        if (result.success) {
+        if (result?.success) {
             if (result.user.role === 'admin_unit' || result.user.role === 'superadmin' || result.user.role === 'pimpinan') {
                 navigate('/admin');
             } else {
                 navigate(from);
             }
+        } else if (result?.requires_otp) {
+            navigate('/verify-otp', {
+                state: {
+                    email: result.email || email,
+                    message: result.message,
+                },
+            });
         }
     };
 
@@ -52,9 +61,9 @@ const Login = () => {
             <header className="container d-flex justify-content-between align-items-center py-2">
                 <div className="d-flex align-items-center gap-4">
                     <Link to="/" className="d-flex align-items-center gap-2 text-decoration-none">
-                        <img 
-                            src="/logo-polinela.png" 
-                            alt="Logo Polinela" 
+                        <img
+                            src="/logo-polinela.png"
+                            alt="Logo Polinela"
                             style={{ width: '38px', height: '38px', objectFit: 'contain' }}
                             className="drop-shadow-logo"
                         />
@@ -80,15 +89,15 @@ const Login = () => {
             </header>
 
             {/* Centered Login Card */}
-            <main className="container my-auto py-3 d-flex justify-content-center">
+            <main className="container my-auto py-3 d-flex justify-content-center" style={{ maxWidth: '480px' }}>
                 <div className="card polinela-auth-card p-4 p-sm-5 animate-fade-in w-100" style={{ maxWidth: '440px' }}>
                     {/* Header inside Card: Logo + APLIKASI E-COMMERCE AGRO + POLINELA (Hijau Perkebunan) */}
                     <div className="d-flex align-items-center gap-3 mb-2">
-                        <img 
-                            src="/logo-polinela.png" 
-                            alt="Polinela" 
+                        <img
+                            src="/logo-polinela.png"
+                            alt="Polinela"
                             style={{ width: '48px', height: '48px', objectFit: 'contain' }}
-                            className="drop-shadow-logo" 
+                            className="drop-shadow-logo"
                         />
                         <div>
                             <h6 className="fw-bold mb-0 text-heading" style={{ fontSize: '13.5px', letterSpacing: '0.5px' }}>
@@ -108,12 +117,16 @@ const Login = () => {
                     <form onSubmit={handleSubmit}>
                         {/* Email or Username */}
                         <div className="mb-3">
+                            <label htmlFor="login-email" className="visually-hidden">Email atau Username</label>
                             <div className="input-group polinela-input-group">
                                 <span className="input-group-text border-end-0">
                                     <Mail size={16} className="text-muted" />
                                 </span>
                                 <input
+                                    id="login-email"
+                                    name="email"
                                     type="text"
+                                    autoComplete="username"
                                     className="form-control border-start-0 ps-0"
                                     placeholder="Masukan email atau username"
                                     required
@@ -126,13 +139,13 @@ const Login = () => {
                         {/* Password */}
                         <div className="mb-4">
                             <div className="d-flex justify-content-between align-items-center mb-1">
-                                <label className="small text-muted fw-bold" style={{ fontSize: '11px', letterSpacing: '0.5px' }}>
+                                <label htmlFor="login-password" className="small text-muted fw-bold" style={{ fontSize: '11px', letterSpacing: '0.5px' }}>
                                     PASSWORD
                                 </label>
-                                <a 
-                                    href="#lupa" 
+                                <a
+                                    href="#lupa"
                                     onClick={(e) => { e.preventDefault(); alert('Silakan hubungi Administrator Unit/Superadmin Polinela untuk bantuan reset password.'); }}
-                                    className="small fw-bold text-decoration-none text-agro" 
+                                    className="small fw-bold text-decoration-none text-agro"
                                     style={{ fontSize: '12px' }}
                                 >
                                     Lupa Password?
@@ -143,14 +156,17 @@ const Login = () => {
                                     <Lock size={16} className="text-muted" />
                                 </span>
                                 <input
+                                    id="login-password"
+                                    name="password"
                                     type={showPassword ? 'text' : 'password'}
+                                    autoComplete="current-password"
                                     className="form-control border-start-0 border-end-0 ps-0"
                                     placeholder="Masukan password"
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                 />
-                                <button 
+                                <button
                                     type="button"
                                     className="input-group-text border-start-0 text-muted"
                                     onClick={() => setShowPassword(!showPassword)}
@@ -178,8 +194,8 @@ const Login = () => {
                     {/* Help text & Register */}
                     <div className="text-center small text-muted mb-2" style={{ fontSize: '12.5px' }}>
                         Kendala login?{' '}
-                        <a 
-                            href="https://wa.me/62881080592737?text=Halo%20Admin%20Polinela%20Agro,%20saya%20mengalami%20kendala%20saat%20login%20ke%20akun%20saya.%20Mohon%20bantuannya." 
+                        <a
+                            href="https://wa.me/62881080592737?text=Halo%20Admin%20Polinela%20Agro,%20saya%20mengalami%20kendala%20saat%20login%20ke%20akun%20saya.%20Mohon%20bantuannya."
                             target="_blank"
                             rel="noopener noreferrer"
                             className="fw-bold text-decoration-none text-agro"
@@ -196,11 +212,11 @@ const Login = () => {
                         </Link>
                     </div>
 
-                    {/* ONE-CLICK DEMO ACCOUNTS (Di bagian bawah) */}
+                    {/* Demo quick access */}
                     <div className="p-3 rounded-3 bg-elevated-subtle border">
                         <div className="d-flex align-items-center justify-content-between mb-2">
                             <span className="small fw-bold text-heading d-flex align-items-center gap-1" style={{ fontSize: '11px' }}>
-                                <Sparkles size={13} className="text-warning" /> Akun Demo:
+                                <ShieldCheck size={13} className="text-success" /> Akun Demo:
                             </span>
                         </div>
                         <div className="d-flex flex-wrap gap-1">

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class ActivityLog extends Model
 {
@@ -21,17 +22,17 @@ class ActivityLog extends Model
         'details',
     ];
 
-    public function setActivityAttribute($value)
+    public function setActivityAttribute(?string $value): void
     {
         $this->attributes['aksi'] = $value;
     }
 
-    public function setModuleAttribute($value)
+    public function setModuleAttribute(?string $value): void
     {
         $this->attributes['modul'] = $value;
     }
 
-    public function setDetailsAttribute($value)
+    public function setDetailsAttribute(?string $value): void
     {
         $this->attributes['deskripsi'] = $value;
     }
@@ -46,7 +47,7 @@ class ActivityLog extends Model
                 $log->user_agent = request()->userAgent();
             }
             if (empty($log->user_id) && request()) {
-                $log->user_id = auth('sanctum')->id() ?? auth()->id();
+                $log->user_id = Auth::guard('sanctum')->id() ?? Auth::id();
             }
         });
     }
@@ -87,9 +88,9 @@ class ActivityLog extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public static function log($aksi, $modul, $deskripsi)
+    public static function log(?string $aksi, ?string $modul, ?string $deskripsi): void
     {
-        $userId = auth('sanctum')->id() ?? auth()->id();
+        $userId = Auth::guard('sanctum')->id() ?? Auth::id();
         self::create([
             'user_id'    => $userId,
             'aksi'       => $aksi,

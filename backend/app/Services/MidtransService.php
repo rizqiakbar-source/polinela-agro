@@ -129,7 +129,7 @@ class MidtransService
                 'Content-Type'  => 'application/json',
                 'Accept'        => 'application/json',
                 'Authorization' => 'Basic ' . base64_encode($serverKey . ':'),
-            ])->post(self::getSnapApiUrl(), $payload);
+            ])->timeout(5)->post(self::getSnapApiUrl(), $payload);
 
             if ($response->successful()) {
                 $data = $response->json();

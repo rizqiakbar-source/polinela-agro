@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import client from '../api/client';
 import { formatRupiah, formatDate, getOrderStatusBadge, getPaymentStatusBadge, getPaymentProofUrl } from '../utils/format';
-import { ArrowLeft, Store, CreditCard, Truck, Upload, CheckCircle2, XCircle, AlertCircle, Info, Printer, Zap, Mail, Phone, Landmark, QrCode, Wallet, MessageCircle, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Store, CreditCard, Truck, Upload, CheckCircle2, XCircle, AlertCircle, Info, Printer, Zap, Mail, Phone, Landmark, QrCode, Wallet, MessageCircle, ExternalLink, FileText, Download, Eye } from 'lucide-react';
 import Swal from 'sweetalert2';
 import ReceiptModal from '../components/ReceiptModal';
 import { triggerMidtransPayment } from '../utils/midtrans';
@@ -80,7 +80,13 @@ const DetailPesanan = () => {
     useEffect(() => {
         if (!order || order.status !== 'menunggu_pembayaran') return;
 
+        let pollCount = 0;
+        const maxPolls = 80; // Maksimal ~2.5 menit polling aktif otomatis
+
         const checkStatusSilently = async () => {
+            if (document.visibilityState !== 'visible') return; // Hemat bandwidth jika tab tidak aktif
+            pollCount++;
+
             try {
                 const syncRes = await client.get(`/payment/midtrans/status/${id}`);
                 if (syncRes.data.order && syncRes.data.order.status !== 'menunggu_pembayaran') {
@@ -93,17 +99,24 @@ const DetailPesanan = () => {
                         showConfirmButton: false,
                     });
                 }
-            } catch (err) {
+            } catch {
                 // quiet
+            }
+
+            // Hentikan polling otomatis jika sudah mencapai batas waktu
+            if (pollCount >= maxPolls && intervalId) {
+                clearInterval(intervalId);
             }
         };
 
-        // Polling setiap 1.5 detik (Real-Time Ultra Responsif)
-        const intervalId = setInterval(checkStatusSilently, 1500);
+        // Polling setiap 2 detik saat tab aktif
+        const intervalId = setInterval(checkStatusSilently, 2000);
 
-        // Langsung cek seketika saat user kembali ke tab web dari simulator / mobile banking
+        // Langsung cek seketika saat user kembali fokus ke tab web
         const handleFocus = () => {
-            checkStatusSilently();
+            if (document.visibilityState === 'visible') {
+                checkStatusSilently();
+            }
         };
 
         window.addEventListener('focus', handleFocus);
@@ -381,7 +394,6 @@ const DetailPesanan = () => {
         : Number(order.grand_total ?? order.total_akhir ?? 0);
 
     const isAwaitingPayment = order.status === 'menunggu_pembayaran';
-    const isUnderVerification = order.status === 'menunggu_verifikasi';
     const orderNumberDisplay = order.order_number || order.no_pesanan || `#${order.id}`;
 
     const handleOpenWhatsApp = async () => {
@@ -657,24 +669,133 @@ const DetailPesanan = () => {
                                 </div>
                             )}
 
-                            {/* Display Existing Uploaded Proof */}
+                            {/* Display Existing Uploaded Proof (Image or PDF) */}
                             {order.payment?.bukti_bayar && (
-                                <div className="mt-3 pt-3 border-top">
-                                    <span className="text-muted small d-block mb-2">Bukti Pembayaran Terkirim:</span>
-                                    <a
-                                        href={getPaymentProofUrl(order.payment.bukti_bayar)}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="d-block rounded-3 overflow-hidden border p-1 bg-light text-center"
-                                    >
-                                        <img
-                                            src={getPaymentProofUrl(order.payment.bukti_bayar)}
-                                            alt="Bukti Transfer"
-                                            className="w-100 rounded-2 object-fit-contain"
-                                            style={{ maxHeight: '180px' }}
-                                        />
-                                        <span className="small text-primary d-block mt-1">Klik untuk memperbesar ↗</span>
-                                    </a>
+                                <div className="mt-3 pt-3 border-top text-start">
+                                    <span className="text-muted small d-block mb-2 fw-semibold">Bukti Pembayaran Terkirim:</span>
+                                    {order.payment.bukti_bayar.toLowerCase().endsWith('.pdf') ? (
+                                        <div className="p-3 bg-light rounded-3 border d-flex align-items-center justify-content-between">
+                                            <div className="d-flex align-items-center gap-2 overflow-hidden">
+                                                <FileText size={32} className="text-danger flex-shrink-0" />
+                                                <div className="text-truncate">
+                                                    <strong className="d-block text-dark small text-truncate" title={order.payment.bukti_bayar}>
+                                                        {order.payment.bukti_bayar}
+                                                    </strong>
+                                                    <span className="badge bg-danger bg-opacity-10 text-danger" style={{ fontSize: '10px' }}>
+                                                        Dokumen PDF
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="d-flex gap-1 flex-shrink-0">
+                                                <a
+                                                    href={getPaymentProofUrl(order.payment.bukti_bayar)}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="btn btn-sm btn-outline-primary rounded-pill px-2.5 d-inline-flex align-items-center gap-1"
+                                                >
+                                                    <Eye size={12} />
+                                                    <span>Buka</span>
+                                                </a>
+                                                <a
+                                                    href={getPaymentProofUrl(order.payment.bukti_bayar)}
+                                                    download
+                                                    className="btn btn-sm btn-outline-secondary rounded-pill px-2.5 d-inline-flex align-items-center gap-1"
+                                                >
+                                                    <Download size={12} />
+                                                    <span>Unduh</span>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="rounded-3 overflow-hidden border p-1 bg-light text-center">
+                                            <a
+                                                href={getPaymentProofUrl(order.payment.bukti_bayar)}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="d-block"
+                                            >
+                                                <img
+                                                    src={getPaymentProofUrl(order.payment.bukti_bayar)}
+                                                    alt="Bukti Transfer"
+                                                    className="w-100 rounded-2 object-fit-contain"
+                                                    style={{ maxHeight: '180px' }}
+                                                />
+                                                <span className="small text-primary d-block mt-1">Klik untuk memperbesar gambar ↗</span>
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Form Upload / Unggah Ulang Bukti Pembayaran */}
+                            {['menunggu_pembayaran', 'pending', 'menunggu_verifikasi'].includes(order.status) && (
+                                <div className="mt-3 pt-3 border-top text-start">
+                                    <div className="d-flex align-items-center justify-content-between mb-2">
+                                        <label className="form-label small fw-bold text-dark mb-0 d-flex align-items-center gap-1">
+                                            <Upload size={14} className="text-success" />
+                                            <span>{order.payment?.bukti_bayar ? 'Unggah Ulang / Revisi Bukti' : 'Unggah Bukti Transfer / Dokumen'}</span>
+                                        </label>
+                                        <small className="text-muted" style={{ fontSize: '11px' }}>JPG, PNG, PDF (Maks. 5MB)</small>
+                                    </div>
+                                    <form onSubmit={handleUploadBukti}>
+                                        <div className="input-group input-group-sm mb-2">
+                                            <input
+                                                type="file"
+                                                className="form-control"
+                                                accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) {
+                                                        if (file.size > 5 * 1024 * 1024) {
+                                                            Swal.fire({
+                                                                icon: 'error',
+                                                                title: 'Ukuran Terlalu Besar',
+                                                                text: 'Ukuran berkas maksimal adalah 5MB. Silakan pilih berkas yang lebih kecil.',
+                                                            });
+                                                            e.target.value = '';
+                                                            setBuktiFile(null);
+                                                            return;
+                                                        }
+                                                        const validExts = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
+                                                        const ext = file.name.split('.').pop().toLowerCase();
+                                                        if (!validExts.includes(ext)) {
+                                                            Swal.fire({
+                                                                icon: 'error',
+                                                                title: 'Format Tidak Didukung',
+                                                                text: 'Format file tidak valid! Hanya diperbolehkan JPG, JPEG, PNG, WEBP, atau PDF.',
+                                                            });
+                                                            e.target.value = '';
+                                                            setBuktiFile(null);
+                                                            return;
+                                                        }
+                                                        setBuktiFile(file);
+                                                    }
+                                                }}
+                                            />
+                                            <button
+                                                type="submit"
+                                                disabled={!buktiFile || uploading}
+                                                className="btn btn-success d-inline-flex align-items-center gap-1 px-3 fw-semibold"
+                                            >
+                                                {uploading ? (
+                                                    <>
+                                                        <span className="spinner-border spinner-border-sm" role="status"></span>
+                                                        <span>Mengunggah...</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Upload size={13} />
+                                                        <span>Kirim Bukti</span>
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                        {order.payment?.bukti_bayar && (
+                                            <small className="text-muted d-block" style={{ fontSize: '11px' }}>
+                                                * Mengunggah berkas baru akan otomatis menggantikan bukti pembayaran sebelumnya.
+                                            </small>
+                                        )}
+                                    </form>
                                 </div>
                             )}
                         </div>

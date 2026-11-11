@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import client from '../api/client';
+import client, { clearApiCache } from '../api/client';
 import Swal from 'sweetalert2';
 
 const AuthContext = createContext(null);
@@ -24,8 +24,11 @@ export const AuthProvider = ({ children }) => {
                 localStorage.setItem('user', JSON.stringify(res.data.data));
             }
         } catch (err) {
-            console.error('Failed to fetch user:', err);
-            logout(false);
+            if (err.response?.status === 401) {
+                logout(false);
+            } else {
+                console.warn('Gagal sinkronisasi data user dari server:', err?.message || err);
+            }
         } finally {
             setLoading(false);
         }
@@ -37,8 +40,10 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password) => {
         try {
+            clearApiCache();
             const res = await client.post('/auth/login', { email, password });
             if (res.data.status === 'success') {
+                clearApiCache();
                 const { user: userData, token: tokenData } = res.data.data;
                 setUser(userData);
                 setToken(tokenData);
@@ -55,6 +60,14 @@ export const AuthProvider = ({ children }) => {
                 return { success: true, user: userData };
             }
         } catch (error) {
+            if (error.response?.data?.requires_otp) {
+                return { 
+                    success: false, 
+                    requires_otp: true, 
+                    email: error.response.data.email, 
+                    message: error.response.data.message 
+                };
+            }
             const message = error.response?.data?.message || 'Login gagal. Silakan periksa email dan password Anda.';
             Swal.fire({
                 icon: 'error',
@@ -69,6 +82,22 @@ export const AuthProvider = ({ children }) => {
         try {
             const res = await client.post('/auth/register', userData);
             if (res.data.status === 'success') {
+                if (res.data.requires_otp) {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Verifikasi Email Diperlukan',
+                        text: res.data.message || 'Silakan periksa kode OTP yang telah dikirim ke email Anda.',
+                        confirmButtonText: 'Masukkan Kode OTP',
+                        confirmButtonColor: '#15803d',
+                    });
+                    return { 
+                        success: true, 
+                        requires_otp: true, 
+                        email: res.data.email, 
+                        debug_otp: res.data.debug_otp 
+                    };
+                }
+
                 const { user: newUser, token: newToken } = res.data.data;
                 setUser(newUser);
                 setToken(newToken);
@@ -96,7 +125,64 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const verifyOtp = async (email, otp) => {
+        try {
+            clearApiCache();
+            const res = await client.post('/auth/verify-otp', { email, otp });
+            if (res.data.status === 'success') {
+                clearApiCache();
+                const { user: newUser, token: newToken } = res.data.data;
+                setUser(newUser);
+                setToken(newToken);
+                localStorage.setItem('token', newToken);
+                localStorage.setItem('user', JSON.stringify(newUser));
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Verifikasi Berhasil',
+                    text: res.data.message || 'Akun Anda berhasil diverifikasi!',
+                    timer: 2000,
+                    showConfirmButton: false,
+                });
+                return { success: true, user: newUser };
+            }
+        } catch (error) {
+            const message = error.response?.data?.message || 'Verifikasi gagal. Pastikan kode OTP benar.';
+            Swal.fire({
+                icon: 'error',
+                title: 'Verifikasi Gagal',
+                text: message,
+            });
+            return { success: false, message };
+        }
+    };
+
+    const resendOtp = async (email) => {
+        try {
+            const res = await client.post('/auth/resend-otp', { email });
+            if (res.data.status === 'success') {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Kode Terkirim',
+                    text: res.data.message || 'Kode OTP baru telah dikirimkan ke email Anda.',
+                    timer: 2000,
+                    showConfirmButton: false,
+                });
+                return { success: true, debug_otp: res.data.debug_otp };
+            }
+        } catch (error) {
+            const message = error.response?.data?.message || 'Gagal mengirim ulang kode OTP.';
+            Swal.fire({
+                icon: 'warning',
+                title: 'Perhatian',
+                text: message,
+            });
+            return { success: false, message, retry_after: error.response?.data?.retry_after };
+        }
+    };
+
     const logout = async (showAlert = true) => {
+        clearApiCache();
         if (token) {
             try {
                 await client.post('/auth/logout');
@@ -104,6 +190,7 @@ export const AuthProvider = ({ children }) => {
                 // Ignore logout network error
             }
         }
+        clearApiCache();
         setUser(null);
         setToken(null);
         localStorage.removeItem('token');
@@ -134,6 +221,8 @@ export const AuthProvider = ({ children }) => {
                 loading,
                 login,
                 register,
+                verifyOtp,
+                resendOtp,
                 logout,
                 fetchUser,
                 isSuperadmin,

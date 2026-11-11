@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import client from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { formatRupiah, formatDate, getOrderStatusBadge } from '../../utils/format';
+import Swal from 'sweetalert2';
 import { 
     BarChart3, 
     Download, 
@@ -21,6 +23,7 @@ import {
 
 const AdminReports = () => {
     const { isSuperadmin, isPimpinan, user } = useAuth();
+    const [searchParams] = useSearchParams();
 
     const [summary, setSummary] = useState(null);
     const [orders, setOrders] = useState([]);
@@ -29,9 +32,10 @@ const AdminReports = () => {
     const [dailyAnalytics, setDailyAnalytics] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
-    const [statusFilter, setStatusFilter] = useState('paid');
+    const [startDate, setStartDate] = useState(() => searchParams.get('start_date') || '');
+    const [endDate, setEndDate] = useState(() => searchParams.get('end_date') || '');
+    const [statusFilter, setStatusFilter] = useState(() => searchParams.get('status') || 'paid');
+    const [unitId, setUnitId] = useState(() => searchParams.get('unit_id') || '');
 
     const fetchReports = async () => {
         setLoading(true);
@@ -40,6 +44,7 @@ const AdminReports = () => {
             if (startDate) params.append('start_date', startDate);
             if (endDate) params.append('end_date', endDate);
             if (statusFilter) params.append('status', statusFilter);
+            if (unitId) params.append('unit_id', unitId);
 
             const res = await client.get(`/admin/reports/sales?${params.toString()}`);
             if (res.data.status === 'success' || res.data.success) {
@@ -59,11 +64,15 @@ const AdminReports = () => {
 
     useEffect(() => {
         fetchReports();
-    }, [startDate, endDate, statusFilter]);
+    }, [startDate, endDate, statusFilter, unitId]);
 
     const handleExportCSV = () => {
         if (!orders || orders.length === 0) {
-            alert('Tidak ada data pesanan untuk diekspor.');
+            Swal.fire({
+                icon: 'info',
+                title: 'Data Kosong',
+                text: 'Tidak ada data transaksi pesanan pada filter yang dipilih untuk diekspor.',
+            });
             return;
         }
 
@@ -91,7 +100,9 @@ const AdminReports = () => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.setAttribute('href', url);
-        link.setAttribute('download', `Laporan-Penjualan-Polinela-Agro-${new Date().toISOString().slice(0, 10)}.csv`);
+        const unitSuffix = unitId ? `_Unit_${unitId}` : '';
+        const dateSuffix = (startDate || endDate) ? `_${startDate || 'Awal'}_sd_${endDate || 'Kini'}` : '';
+        link.setAttribute('download', `Laporan-Penjualan-Polinela-Agro${unitSuffix}${dateSuffix}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -121,7 +132,7 @@ const AdminReports = () => {
                             : 'Laporan pembukuan keuangan, performa omset, dan audit multi-store perkebunan Politeknik Negeri Lampung.'}
                     </p>
                 </div>
-                <div className="d-flex gap-2">
+                <div className="d-flex flex-wrap gap-2 no-print">
                     <button
                         type="button"
                         className="btn btn-outline-secondary btn-sm rounded-pill px-3 d-inline-flex align-items-center gap-2 shadow-sm bg-white"
@@ -142,9 +153,9 @@ const AdminReports = () => {
             </div>
 
             {/* Filter Rentang Tanggal & Status */}
-            <div className="card border-0 shadow-sm rounded-4 p-3 mb-4 bg-white">
+            <div className="card border-0 shadow-sm rounded-4 p-3 mb-4 bg-white no-print">
                 <div className="row g-3 align-items-center">
-                    <div className="col-md-3">
+                    <div className={isSuperadmin || isPimpinan ? "col-md-2" : "col-md-3"}>
                         <label className="form-label small fw-semibold text-muted">Dari Tanggal</label>
                         <input
                             type="date"
@@ -153,7 +164,7 @@ const AdminReports = () => {
                             onChange={(e) => setStartDate(e.target.value)}
                         />
                     </div>
-                    <div className="col-md-3">
+                    <div className={isSuperadmin || isPimpinan ? "col-md-2" : "col-md-3"}>
                         <label className="form-label small fw-semibold text-muted">Sampai Tanggal</label>
                         <input
                             type="date"
@@ -162,7 +173,7 @@ const AdminReports = () => {
                             onChange={(e) => setEndDate(e.target.value)}
                         />
                     </div>
-                    <div className="col-md-4">
+                    <div className={isSuperadmin || isPimpinan ? "col-md-3" : "col-md-4"}>
                         <label className="form-label small fw-semibold text-muted">Status Transaksi</label>
                         <select
                             className="form-select form-select-sm"
@@ -176,11 +187,29 @@ const AdminReports = () => {
                             <option value="all">Semua Status (Termasuk Menunggu Bayar & Batal)</option>
                         </select>
                     </div>
-                    <div className="col-md-2 d-flex align-items-end">
+
+                    {(isSuperadmin || isPimpinan) && (
+                        <div className="col-md-3">
+                            <label className="form-label small fw-semibold text-muted">Unit Usaha TEFA</label>
+                            <select
+                                className="form-select form-select-sm"
+                                value={unitId}
+                                onChange={(e) => setUnitId(e.target.value)}
+                            >
+                                <option value="">Semua Unit Usaha</option>
+                                <option value="1">Unit Kopi Polinela</option>
+                                <option value="2">Unit Kakao Polinela</option>
+                                <option value="3">Unit Kelapa Sawit</option>
+                                <option value="4">Unit Olahan & Atsiri</option>
+                            </select>
+                        </div>
+                    )}
+
+                    <div className={isSuperadmin || isPimpinan ? "col-md-2 d-flex align-items-end" : "col-md-2 d-flex align-items-end"}>
                         <button
                             type="button"
                             className="btn btn-outline-secondary btn-sm rounded-pill w-100 d-inline-flex align-items-center justify-content-center gap-1"
-                            onClick={() => { setStartDate(''); setEndDate(''); setStatusFilter('paid'); }}
+                            onClick={() => { setStartDate(''); setEndDate(''); setStatusFilter('paid'); setUnitId(''); }}
                             title="Reset Filter"
                         >
                             <RefreshCw size={13} />
@@ -370,43 +399,55 @@ const AdminReports = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {orders.map((o, idx) => {
-                                    const badge = getOrderStatusBadge(o.status);
-                                    const orderNo = o.order_number || o.no_pesanan || `#${o.id}`;
-                                    const customerName = o.shipping?.nama_penerima || o.user?.nama || 'Pelanggan';
-                                    const customerPhone = o.shipping?.no_hp || o.user?.no_hp || '-';
-                                    const total = o.grand_total ?? o.total_akhir ?? 0;
+                                {orders.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={(isSuperadmin || isPimpinan) ? 8 : 7} className="text-center py-5 text-muted">
+                                            <div className="py-3">
+                                                <ShoppingCart size={32} className="text-muted opacity-50 mb-2" />
+                                                <p className="mb-0 fw-semibold">Tidak ada transaksi penjualan pada kriteria filter yang dipilih.</p>
+                                                <small className="text-muted">Coba ubah rentang tanggal, status pesanan, atau pilih unit usaha lain.</small>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    orders.map((o, idx) => {
+                                        const badge = getOrderStatusBadge(o.status);
+                                        const orderNo = o.order_number || o.no_pesanan || `#${o.id}`;
+                                        const customerName = o.shipping?.nama_penerima || o.user?.nama || 'Pelanggan';
+                                        const customerPhone = o.shipping?.no_hp || o.user?.no_hp || '-';
+                                        const total = o.grand_total ?? o.total_akhir ?? 0;
 
-                                    return (
-                                        <tr key={o.id}>
-                                            <td className="text-muted">{idx + 1}</td>
-                                            <td className="fw-bold text-primary">{orderNo}</td>
-                                            <td className="text-muted">{formatDate(o.created_at)}</td>
-                                            {(isSuperadmin || isPimpinan) && (
-                                                <td><span className="badge bg-light text-dark border">{o.unit?.nama_unit}</span></td>
-                                            )}
-                                            <td>
-                                                <div className="fw-semibold text-dark">{customerName}</div>
-                                                <small className="text-muted">{customerPhone}</small>
-                                            </td>
-                                            <td>
-                                                <div style={{ maxWidth: '240px' }}>
-                                                    {o.details && o.details.length > 0 ? (
-                                                        o.details.map((d, dIdx) => (
-                                                            <div key={dIdx} className="text-truncate" title={d.nama_produk}>
-                                                                • {d.nama_produk} &times; {d.qty || d.jumlah || 1}
-                                                            </div>
-                                                        ))
-                                                    ) : (
-                                                        <span className="text-muted">-</span>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="fw-bold text-success">{formatRupiah(total)}</td>
-                                            <td><span className={`badge ${badge.bg}`}>{badge.label}</span></td>
-                                        </tr>
-                                    );
-                                })}
+                                        return (
+                                            <tr key={o.id}>
+                                                <td className="text-muted">{idx + 1}</td>
+                                                <td className="fw-bold text-primary">{orderNo}</td>
+                                                <td className="text-muted">{formatDate(o.created_at)}</td>
+                                                {(isSuperadmin || isPimpinan) && (
+                                                    <td><span className="badge bg-light text-dark border">{o.unit?.nama_unit}</span></td>
+                                                )}
+                                                <td>
+                                                    <div className="fw-semibold text-dark">{customerName}</div>
+                                                    <small className="text-muted">{customerPhone}</small>
+                                                </td>
+                                                <td>
+                                                    <div style={{ maxWidth: '240px' }}>
+                                                        {o.details && o.details.length > 0 ? (
+                                                            o.details.map((d, dIdx) => (
+                                                                <div key={dIdx} className="text-truncate" title={d.nama_produk}>
+                                                                    • {d.nama_produk} &times; {d.qty || d.jumlah || 1}
+                                                                </div>
+                                                            ))
+                                                        ) : (
+                                                            <span className="text-muted">-</span>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="fw-bold text-success">{formatRupiah(total)}</td>
+                                                <td><span className={`badge ${badge.bg}`}>{badge.label}</span></td>
+                                            </tr>
+                                        );
+                                    })
+                                )}
                             </tbody>
                         </table>
                     </div>

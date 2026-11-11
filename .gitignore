@@ -83,6 +83,18 @@ public/uploads/produk/*
 !public/uploads/bukti_bayar/.gitkeep
 !public/uploads/produk/.gitkeep
 
+backend/public/uploads/avatars/*
+backend/public/uploads/bukti_bayar/*
+backend/public/uploads/payments/*
+backend/public/uploads/products/*
+!backend/public/uploads/avatars/.gitkeep
+!backend/public/uploads/bukti_bayar/.gitkeep
+!backend/public/uploads/payments/.gitkeep
+!backend/public/uploads/products/.gitkeep
+
+# Temporary Helper Scripts
+generate_*.js
+
 # Compiled Documentation
 docs/*.pdf
 docs/ERD.png

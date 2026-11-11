@@ -35,7 +35,7 @@ class PaymentController extends Controller
             });
         }
 
-        $payments = $query->orderBy('id', 'desc')->paginate($request->get('per_page', 10));
+        $payments = $query->orderBy('id', 'desc')->paginate($request->get('per_page', 10))->withQueryString();
 
         // Append helper attributes
         $payments->getCollection()->transform(function ($p) {
@@ -62,6 +62,14 @@ class PaymentController extends Controller
     public function verifikasi(Request $request, $id = null)
     {
         $user = $request->user();
+        if (!in_array($user->role, ['superadmin', 'admin_unit'])) {
+            return response()->json([
+                'status'  => 'error',
+                'success' => false,
+                'message' => 'Akses ditolak: Hanya Superadmin dan Admin Unit yang berhak memverifikasi pembayaran.',
+            ], 403);
+        }
+
         $paymentId = $id ?? $request->payment_id ?? $request->id;
 
         $payment = Payment::with('order')->find($paymentId);
@@ -80,16 +88,18 @@ class PaymentController extends Controller
 
         $catatan = $request->catatan ?: 'Pembayaran telah diverifikasi sah oleh admin unit.';
 
-        $payment->update([
-            'status'      => 'lunas',
-            'verified_by' => $user->id,
-            'verified_at' => now(),
-            'catatan'     => $catatan,
-        ]);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($payment, $user, $catatan) {
+            $payment->update([
+                'status'      => 'lunas',
+                'verified_by' => $user->id,
+                'verified_at' => now(),
+                'catatan'     => $catatan,
+            ]);
 
-        $payment->order->update([
-            'status' => 'diproses',
-        ]);
+            $payment->order->update([
+                'status' => 'diproses',
+            ]);
+        });
 
         // Trigger Notifikasi Otomatis Email & In-App Status Lunas
         try {
@@ -118,6 +128,14 @@ class PaymentController extends Controller
     public function tolak(Request $request, $id = null)
     {
         $user = $request->user();
+        if (!in_array($user->role, ['superadmin', 'admin_unit'])) {
+            return response()->json([
+                'status'  => 'error',
+                'success' => false,
+                'message' => 'Akses ditolak: Hanya Superadmin dan Admin Unit yang berhak menolak pembayaran.',
+            ], 403);
+        }
+
         $paymentId = $id ?? $request->payment_id ?? $request->id;
         $catatan = $request->alasan ?? $request->catatan ?? 'Bukti pembayaran tidak sesuai atau tidak valid.';
 
@@ -134,16 +152,18 @@ class PaymentController extends Controller
             ], 403);
         }
 
-        $payment->update([
-            'status'      => 'ditolak',
-            'verified_by' => $user->id,
-            'verified_at' => now(),
-            'catatan'     => $catatan,
-        ]);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($payment, $user, $catatan) {
+            $payment->update([
+                'status'      => 'ditolak',
+                'verified_by' => $user->id,
+                'verified_at' => now(),
+                'catatan'     => $catatan,
+            ]);
 
-        $payment->order->update([
-            'status' => 'menunggu_pembayaran',
-        ]);
+            $payment->order->update([
+                'status' => 'menunggu_pembayaran',
+            ]);
+        });
 
         // In-App Notification Penolakan
         try {

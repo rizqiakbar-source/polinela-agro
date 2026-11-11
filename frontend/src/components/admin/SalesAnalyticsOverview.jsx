@@ -12,9 +12,7 @@ import {
     ArrowUpRight,
     CheckCircle2,
     Calendar,
-    ChevronRight,
     ExternalLink,
-    SlidersHorizontal,
     MoveHorizontal,
     MapPin,
     Zap
@@ -60,7 +58,6 @@ const SalesAnalyticsOverview = ({
         }));
     } else {
         // Generate current 7 calendar days with 0 initial value if database is empty
-        const daysOfWeek = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
         const monthsNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
         chartPoints = [];
         for (let i = 6; i >= 0; i--) {
@@ -74,23 +71,72 @@ const SalesAnalyticsOverview = ({
         }
     }
 
-    const dataMax = Math.max(...chartPoints.map(p => p.value), 0);
-    const maxValue = dataMax > 0 ? Math.ceil(dataMax * 1.25 / 10000) * 10000 : 100000;
-    const chartHeight = 180;
-    const chartWidth = 560;
-    const paddingX = 40;
-    const paddingY = 25;
+    // Calculate dynamic nice maximum for Revenue (Left Y-Axis)
+    const dataMaxRevenue = Math.max(...chartPoints.map(p => p.value), 0);
+    const calculateNiceMax = (val) => {
+        if (val <= 0) return 100000;
+        const target = val * 1.2;
+        const magnitude = Math.pow(10, Math.floor(Math.log10(target)));
+        const ratio = target / magnitude;
+        let factor = 10;
+        if (ratio <= 1.25) factor = 1.25;
+        else if (ratio <= 1.5) factor = 1.5;
+        else if (ratio <= 2) factor = 2;
+        else if (ratio <= 2.5) factor = 2.5;
+        else if (ratio <= 5) factor = 5;
+        else if (ratio <= 7.5) factor = 7.5;
+        return Math.ceil(factor * magnitude);
+    };
+    const maxRevenue = calculateNiceMax(dataMaxRevenue);
 
-    // Generate smooth SVG points
+    // Calculate dynamic nice maximum for Orders (Right Y-Axis)
+    const dataMaxOrders = Math.max(...chartPoints.map(p => p.sales), 0);
+    const maxOrders = dataMaxOrders > 0 ? Math.max(Math.ceil(dataMaxOrders * 1.25), 4) : 4;
+
+    // Mini KPI summary metrics for the period
+    const periodRevenue = chartPoints.reduce((acc, p) => acc + p.value, 0);
+    const periodOrders = chartPoints.reduce((acc, p) => acc + p.sales, 0);
+    const aov = periodOrders > 0 ? Math.round(periodRevenue / periodOrders) : 0;
+
+    // Exact SVG Dimensions & Margins
+    const chartWidth = 640;
+    const chartHeight = 220;
+    const margin = { top: 25, right: 35, bottom: 35, left: 75 };
+    const plotWidth = chartWidth - margin.left - margin.right;
+    const plotHeight = chartHeight - margin.top - margin.bottom;
+    const baselineY = margin.top + plotHeight; // Solid baseline (Rp 0 & 0 Order)
+
+    // Generate accurate data points mapped to SVG plot
     const getSvgPoints = () => {
         const n = chartPoints.length;
         if (n === 0) return [];
-        const stepX = (chartWidth - paddingX * 2) / (n - 1 || 1);
+        const stepX = plotWidth / (n - 1 || 1);
+        const colW = n > 1 ? stepX : plotWidth;
+        const barWidth = Math.min(46, Math.max(36, colW * 0.52));
+
         return chartPoints.map((p, i) => {
-            const x = paddingX + i * stepX;
-            const ratio = maxValue > 0 ? (p.value / maxValue) : 0;
-            const y = chartHeight - paddingY - ratio * (chartHeight - paddingY * 2);
-            return { x, y, ...p, originalIndex: i };
+            const x = margin.left + i * stepX;
+            // Revenue mapping
+            const ratioRev = maxRevenue > 0 ? (p.value / maxRevenue) : 0;
+            const y = baselineY - (ratioRev * plotHeight);
+
+            // Order bar mapping (soft pastel mint rounded pill bar)
+            const ratioSales = maxOrders > 0 ? (p.sales / maxOrders) : 0;
+            const barH = ratioSales * (plotHeight * 0.85);
+            const barX = x - barWidth / 2;
+            const barY = baselineY - barH;
+
+            return { 
+                ...p, 
+                x, 
+                y, 
+                barX, 
+                barY, 
+                barH, 
+                barWidth, 
+                colW, 
+                originalIndex: i 
+            };
         });
     };
 
@@ -98,9 +144,9 @@ const SalesAnalyticsOverview = ({
 
     // Generate Monotone Cubic Spline to avoid artificial overshooting
     const generateSplinePath = (pts) => {
-        if (pts.length === 0) return '';
-        if (pts.length === 1) return `M ${pts[0].x} ${pts[0].y}`;
-        if (pts.length === 2) return `M ${pts[0].x},${pts[0].y} L ${pts[1].x},${pts[1].y}`;
+        if (!pts || pts.length === 0) return '';
+        if (pts.length === 1) return `M ${pts[0].x.toFixed(2)} ${pts[0].y.toFixed(2)}`;
+        if (pts.length === 2) return `M ${pts[0].x.toFixed(2)},${pts[0].y.toFixed(2)} L ${pts[1].x.toFixed(2)},${pts[1].y.toFixed(2)}`;
 
         let path = `M ${pts[0].x.toFixed(2)},${pts[0].y.toFixed(2)}`;
         for (let i = 0; i < pts.length - 1; i++) {
@@ -133,7 +179,7 @@ const SalesAnalyticsOverview = ({
 
     const splineLine = generateSplinePath(svgPoints);
     const splineArea = svgPoints.length > 0 
-        ? `${splineLine} L ${svgPoints[svgPoints.length - 1].x.toFixed(2)},${chartHeight - paddingY} L ${svgPoints[0].x.toFixed(2)},${chartHeight - paddingY} Z`
+        ? `${splineLine} L ${svgPoints[svgPoints.length - 1].x.toFixed(2)},${baselineY} L ${svgPoints[0].x.toFixed(2)},${baselineY} Z`
         : '';
 
     // Active tooltip point default to hovered, selected, or last item
@@ -142,6 +188,11 @@ const SalesAnalyticsOverview = ({
         : (selectedPointIndex !== null ? selectedPointIndex : (svgPoints.length > 0 ? svgPoints.length - 1 : null));
 
     const activePoint = activePointIndex !== null && svgPoints[activePointIndex] ? svgPoints[activePointIndex] : null;
+
+    // Timeline Slider track fill percentage matching mockup
+    const sliderPercent = chartPoints.length > 1 
+        ? ((activePoint?.originalIndex ?? (chartPoints.length - 1)) / (chartPoints.length - 1)) * 100 
+        : 100;
 
     // Pointer Scrubbing Handler for Dragging across timeline
     const updatePointFromPointer = useCallback((clientX) => {
@@ -220,7 +271,8 @@ const SalesAnalyticsOverview = ({
             confirmButtonColor: '#15803d',
         }).then((result) => {
             if (result.isConfirmed) {
-                window.location.href = '/admin/reports';
+                const targetUrl = pt.date ? `/admin/reports?start_date=${pt.date}&end_date=${pt.date}` : '/admin/reports';
+                window.location.href = targetUrl;
             }
         });
     };
@@ -406,239 +458,351 @@ const SalesAnalyticsOverview = ({
             <div className="row g-3 mb-4">
                 {/* 1. Sales Analytics Spline Area Chart */}
                 <div className="col-lg-7">
-                    <div className="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                    <div className="card border-0 shadow-sm rounded-4 p-4 bg-white h-100 position-relative">
+                        <style>{`
+                            .custom-mock-slider {
+                                -webkit-appearance: none;
+                                appearance: none;
+                                width: 100%;
+                                height: 6px;
+                                border-radius: 9999px;
+                                outline: none;
+                                cursor: pointer;
+                                transition: background 0.15s ease;
+                            }
+                            .custom-mock-slider::-webkit-slider-thumb {
+                                -webkit-appearance: none;
+                                appearance: none;
+                                width: 18px;
+                                height: 18px;
+                                border-radius: 50%;
+                                background: radial-gradient(circle, #0284c7 40%, #0f766e 100%);
+                                cursor: pointer;
+                                box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+                                border: 2.5px solid #ffffff;
+                                transition: transform 0.15s ease, box-shadow 0.15s ease;
+                            }
+                            .custom-mock-slider::-webkit-slider-thumb:hover {
+                                transform: scale(1.18);
+                                box-shadow: 0 0 0 5px rgba(2, 132, 199, 0.2);
+                            }
+                            .custom-mock-slider::-moz-range-thumb {
+                                width: 18px;
+                                height: 18px;
+                                border-radius: 50%;
+                                background: radial-gradient(circle, #0284c7 40%, #0f766e 100%);
+                                cursor: pointer;
+                                box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+                                border: 2.5px solid #ffffff;
+                                transition: transform 0.15s ease, box-shadow 0.15s ease;
+                            }
+                            .custom-mock-slider::-moz-range-thumb:hover {
+                                transform: scale(1.18);
+                                box-shadow: 0 0 0 5px rgba(2, 132, 199, 0.2);
+                            }
+                        `}</style>
+
+                        {/* Card Header matching Mockup */}
                         <div className="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
                             <div>
-                                <h6 className="fw-bold text-dark mb-0">Sales Analytics</h6>
-                                <small className="text-muted" style={{ fontSize: '11px' }}>Grafik dinamika omset dan kuantitas transaksi</small>
+                                <h5 className="fw-bold text-dark mb-1" style={{ letterSpacing: '-0.2px' }}>
+                                    Sales Analytics
+                                </h5>
+                                <small className="text-muted" style={{ fontSize: '12px' }}>
+                                    Grafik dinamika omset dan kuantitas transaksi
+                                </small>
                             </div>
                             <div className="d-flex align-items-center gap-2">
                                 <select 
-                                    className="form-select form-select-sm border-light-subtle rounded-pill small py-1 px-3"
+                                    className="form-select form-select-sm border rounded-pill small py-1.5 px-3 bg-white"
                                     value={viewMode}
-                                    onChange={(e) => setViewMode(e.target.value)}
-                                    style={{ fontSize: '12px', width: 'auto' }}
+                                    onChange={(e) => {
+                                        setViewMode(e.target.value);
+                                        setSelectedPointIndex(null);
+                                        setHoveredPoint(null);
+                                    }}
+                                    style={{ fontSize: '12px', width: 'auto', fontWeight: '500', borderColor: '#e2e8f0' }}
                                 >
                                     <option value="daily">Daily Sales</option>
                                     <option value="monthly">Monthly Sales</option>
                                 </select>
-                                <span className="badge bg-light text-muted border rounded-pill py-1.5 px-2.5 small d-inline-flex align-items-center gap-1" style={{ fontSize: '11px' }}>
-                                    <Calendar size={11} /> {chartPoints[0]?.label || '-'} - {chartPoints[chartPoints.length - 1]?.label || '-'}
+                                <span className="badge bg-white text-muted border rounded-pill py-1.5 px-3 small d-inline-flex align-items-center gap-1.5" style={{ fontSize: '12px', borderColor: '#e2e8f0' }}>
+                                    <Calendar size={13} className="text-muted" /> {chartPoints[0]?.label || '-'} – {chartPoints[chartPoints.length - 1]?.label || '-'} 2026
                                 </span>
                             </div>
                         </div>
 
-                        {/* Interactive SVG Spline Area Chart with Drag & Scrub Support */}
-                        <div className="position-relative w-100 mt-2" style={{ height: `${chartHeight + 35}px`, userSelect: 'none' }}>
-                            {/* Y-Axis Grid Lines */}
-                            <div className="position-absolute w-100 h-100 d-flex flex-column justify-content-between pointer-events-none" style={{ top: 0, left: 0 }}>
-                                {[4, 3, 2, 1, 0].map((step, idx) => (
-                                    <div key={idx} className="d-flex align-items-center w-100" style={{ height: '0px' }}>
-                                        <span className="text-muted small pe-2" style={{ minWidth: '70px', fontSize: '10px', whiteSpace: 'nowrap', textAlign: 'right' }}>
-                                            {formatRupiah((maxValue * step) / 4).replace(',00', '')}
+                        {/* MINI KPI BAR (Summary of Current Period: 3 Centered Columns matching Mockup) */}
+                        <div className="card border rounded-4 p-2.5 mb-4 bg-white shadow-xs" style={{ borderColor: '#e2e8f0' }}>
+                            <div className="row text-center align-items-center g-0">
+                                {/* 1. Total Omset */}
+                                <div className="col-4 border-end px-1">
+                                    <div className="text-muted mb-0.5" style={{ fontSize: '11px' }}>Total Omset</div>
+                                    <div className="d-flex align-items-center justify-content-center gap-1 flex-wrap">
+                                        <span className="fw-bold text-dark" style={{ fontSize: '15px' }}>{formatRupiah(periodRevenue)}</span>
+                                        <span className="badge rounded-pill bg-success-subtle text-success fw-semibold px-1.5 py-0.5" style={{ fontSize: '9.5px' }}>
+                                            ▲ {stats?.growth_revenue || '+5%'}
                                         </span>
-                                        <div className="flex-grow-1 border-bottom" style={{ borderColor: '#f1f5f9' }}></div>
                                     </div>
-                                ))}
-                            </div>
+                                </div>
 
-                            {/* Chart Canvas & SVG Container */}
-                            <div 
-                                className="position-relative" 
-                                style={{ 
-                                    marginLeft: '75px', 
-                                    height: `${chartHeight}px`,
-                                    touchAction: 'none',
-                                    cursor: isDragging ? 'grabbing' : 'grab'
-                                }}
-                            >
-                                <svg 
-                                    ref={chartSvgRef}
-                                    className="w-100 h-100" 
-                                    viewBox={`0 0 ${chartWidth} ${chartHeight}`} 
-                                    preserveAspectRatio="none"
-                                    style={{ overflow: 'visible', display: 'block' }}
-                                    onPointerDown={handlePointerDown}
-                                    onPointerMove={handlePointerMove}
-                                    onPointerUp={handlePointerUp}
-                                    onPointerCancel={handlePointerUp}
-                                >
-                                    <defs>
-                                        <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0%" stopColor="#16a34a" stopOpacity="0.28" />
-                                            <stop offset="100%" stopColor="#16a34a" stopOpacity="0.0" />
-                                        </linearGradient>
-                                        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                                            <feGaussianBlur stdDeviation="3" result="blur" />
-                                            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                                        </filter>
-                                    </defs>
+                                {/* 2. Total Pesanan */}
+                                <div className="col-4 border-end px-1">
+                                    <div className="text-muted mb-0.5" style={{ fontSize: '11px' }}>Total Pesanan</div>
+                                    <div className="fw-bold text-dark" style={{ fontSize: '15px' }}>{periodOrders} Pesanan</div>
+                                </div>
 
-                                    {/* Area Under Curve */}
-                                    {splineArea && (
-                                        <path d={splineArea} fill="url(#salesGrad)" />
-                                    )}
-
-                                    {/* Spline Line */}
-                                    {splineLine && (
-                                        <path 
-                                            d={splineLine} 
-                                            fill="none" 
-                                            stroke="#15803d" 
-                                            strokeWidth="2.8" 
-                                            strokeLinecap="round" 
-                                            strokeLinejoin="round" 
-                                        />
-                                    )}
-
-                                    {/* Transparent Vertical Click / Hover Columns */}
-                                    {svgPoints.map((pt, i) => {
-                                        const colW = (chartWidth - paddingX * 2) / (svgPoints.length || 1);
-                                        return (
-                                            <rect
-                                                key={`hitbox-${i}`}
-                                                x={pt.x - colW / 2}
-                                                y={0}
-                                                width={colW}
-                                                height={chartHeight}
-                                                fill="transparent"
-                                                style={{ cursor: isDragging ? 'grabbing' : 'pointer' }}
-                                                onClick={() => handlePointClick(pt, i)}
-                                                onMouseEnter={() => !isDragging && setHoveredPoint(i)}
-                                            />
-                                        );
-                                    })}
-
-                                    {/* Static Baseline Dots for all dates */}
-                                    {svgPoints.map((pt, i) => (
-                                        <circle
-                                            key={`node-${i}`}
-                                            cx={pt.x}
-                                            cy={pt.y}
-                                            r="4"
-                                            fill="#ffffff"
-                                            stroke="#15803d"
-                                            strokeWidth="2"
-                                            style={{ cursor: isDragging ? 'grabbing' : 'pointer' }}
-                                            onClick={() => handlePointClick(pt, i)}
-                                        />
-                                    ))}
-
-                                    {/* Silky-Smooth Gliding Active Indicator Assembly */}
-                                    {activePoint && (
-                                        <g style={{ pointerEvents: 'none' }}>
-                                            {/* Vertical dashed guideline */}
-                                            <line 
-                                                x1={activePoint.x} 
-                                                y1={activePoint.y} 
-                                                x2={activePoint.x} 
-                                                y2={chartHeight - paddingY} 
-                                                stroke="#16a34a" 
-                                                strokeWidth="1.8" 
-                                                strokeDasharray="3 3" 
-                                                style={{
-                                                    transition: 'x1 0.2s cubic-bezier(0.22, 1, 0.36, 1), x2 0.2s cubic-bezier(0.22, 1, 0.36, 1), y1 0.2s cubic-bezier(0.22, 1, 0.36, 1)'
-                                                }}
-                                            />
-
-                                            {/* Pulsing Glowing Halo */}
-                                            <circle
-                                                cx={activePoint.x}
-                                                cy={activePoint.y}
-                                                r="13"
-                                                fill="#16a34a"
-                                                fillOpacity="0.22"
-                                                style={{
-                                                    transition: 'cx 0.2s cubic-bezier(0.22, 1, 0.36, 1), cy 0.2s cubic-bezier(0.22, 1, 0.36, 1)'
-                                                }}
-                                            />
-
-                                            {/* Outer Ring */}
-                                            <circle
-                                                cx={activePoint.x}
-                                                cy={activePoint.y}
-                                                r="7.5"
-                                                fill="#16a34a"
-                                                stroke="#ffffff"
-                                                strokeWidth="2.5"
-                                                style={{
-                                                    filter: 'drop-shadow(0 2px 4px rgba(21, 128, 61, 0.4))',
-                                                    transition: 'cx 0.2s cubic-bezier(0.22, 1, 0.36, 1), cy 0.2s cubic-bezier(0.22, 1, 0.36, 1)'
-                                                }}
-                                            />
-                                        </g>
-                                    )}
-                                </svg>
-
-                                {/* Floating Tooltip with smooth gliding transition and exact node tracking */}
-                                {activePoint && (
-                                    <div 
-                                        className="position-absolute bg-dark text-white rounded-3 px-3 py-1.5 shadow-lg"
-                                        style={{
-                                            left: `${(activePoint.x / chartWidth) * 100}%`,
-                                            top: `${(activePoint.y / chartHeight) * 100}%`,
-                                            transform: 'translate(-50%, -115%)',
-                                            zIndex: 20,
-                                            fontSize: '11px',
-                                            minWidth: '125px',
-                                            textAlign: 'center',
-                                            cursor: 'pointer',
-                                            willChange: 'left, top',
-                                            transition: 'left 0.2s cubic-bezier(0.22, 1, 0.36, 1), top 0.2s cubic-bezier(0.22, 1, 0.36, 1)',
-                                            pointerEvents: isDragging ? 'none' : 'auto',
-                                            boxShadow: '0 8px 20px -4px rgba(0, 0, 0, 0.45)'
-                                        }}
-                                        onClick={() => handleShowDetailModal(activePoint)}
-                                        title="Klik untuk melihat rincian transaksi"
-                                    >
-                                        <div className="fw-semibold text-white-50" style={{ fontSize: '10px' }}>
-                                            {activePoint.sales} pesanan (Klik Rincian)
-                                        </div>
-                                        <div className="fw-bold text-white fs-6" style={{ letterSpacing: '0.2px' }}>
-                                            {formatRupiah(activePoint.value)}
-                                        </div>
-                                        {/* Little Arrow pointing directly down to circle node */}
-                                        <div 
-                                            className="position-absolute"
-                                            style={{
-                                                bottom: '-5px',
-                                                left: '50%',
-                                                transform: 'translateX(-50%)',
-                                                width: 0,
-                                                height: 0,
-                                                borderLeft: '5px solid transparent',
-                                                borderRight: '5px solid transparent',
-                                                borderTop: '5px solid #212529'
-                                            }}
-                                        />
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* X-Axis Labels (Clickable / Scrub Target) */}
-                            <div className="d-flex justify-content-between pt-2 text-muted" style={{ marginLeft: '75px', fontSize: '10.5px' }}>
-                                {chartPoints.map((p, idx) => {
-                                    const isActive = activePoint && activePoint.originalIndex === idx;
-                                    return (
-                                        <span 
-                                            key={idx} 
-                                            onClick={() => handlePointClick(p, idx)}
-                                            className={`cursor-pointer transition-all ${isActive ? 'fw-bold text-success scale-110' : 'hover-text-dark'}`}
-                                            title={`Pilih ${p.label}`}
-                                            style={{ cursor: 'pointer' }}
-                                        >
-                                            {p.label}
-                                        </span>
-                                    );
-                                })}
+                                {/* 3. Rata-rata Transaksi */}
+                                <div className="col-4 px-1">
+                                    <div className="text-muted mb-0.5" style={{ fontSize: '11px' }}>Rata-rata Transaksi</div>
+                                    <div className="fw-bold text-dark" style={{ fontSize: '15px' }}>{formatRupiah(aov)}</div>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Interactive Timeline Scrub Slider */}
-                        <div className="mt-3 pt-2 border-top d-flex align-items-center gap-2" style={{ borderColor: '#f1f5f9' }}>
-                            <div className="d-flex align-items-center gap-1.5 text-muted small" style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>
-                                <MoveHorizontal size={14} className="text-success" />
-                                <span className="d-none d-sm-inline">Geser Timeline:</span>
+                        {/* Interactive Combo Chart (Smooth Gradient Area + Rounded Bar Chart) */}
+                        <div className="position-relative w-100 overflow-hidden" style={{ height: `${chartHeight + 10}px`, userSelect: 'none' }}>
+                            {/* SVG Plot Area */}
+                            <svg 
+                                ref={chartSvgRef}
+                                className="w-100 h-100" 
+                                viewBox={`0 0 ${chartWidth} ${chartHeight}`} 
+                                preserveAspectRatio="none"
+                                style={{ overflow: 'hidden', display: 'block', touchAction: 'none', cursor: isDragging ? 'grabbing' : 'default' }}
+                                onPointerDown={handlePointerDown}
+                                onPointerMove={handlePointerMove}
+                                onPointerUp={handlePointerUp}
+                                onPointerCancel={handlePointerUp}
+                            >
+                                <defs>
+                                    {/* Soft Mint Pastel Bar Gradient */}
+                                    <linearGradient id="mintBarGrad" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor="#a7f3d0" stopOpacity="0.80" />
+                                        <stop offset="100%" stopColor="#d1fae5" stopOpacity="0.45" />
+                                    </linearGradient>
+                                    <linearGradient id="mintBarGradActive" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor="#86efac" stopOpacity="0.95" />
+                                        <stop offset="100%" stopColor="#bbf7d0" stopOpacity="0.65" />
+                                    </linearGradient>
+
+                                    {/* Smooth Emerald Area Gradient matching Mockup */}
+                                    <linearGradient id="mockAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor="#15803d" stopOpacity="0.15" />
+                                        <stop offset="100%" stopColor="#15803d" stopOpacity="0.01" />
+                                    </linearGradient>
+                                </defs>
+
+                                {/* 1. Gridlines & Sumbu Y Labels */}
+                                {[4, 3, 2, 1, 0].map((step) => {
+                                    const yPos = margin.top + ((4 - step) / 4) * plotHeight;
+                                    const revVal = (maxRevenue * step) / 4;
+                                    const isBaseline = step === 0;
+
+                                    return (
+                                        <g key={`gridline-${step}`}>
+                                            {/* Horizontal Dashed Grid Line */}
+                                            <line 
+                                                x1={margin.left}
+                                                y1={yPos}
+                                                x2={chartWidth - margin.right}
+                                                y2={yPos}
+                                                stroke="#e2e8f0"
+                                                strokeWidth="1"
+                                                strokeDasharray="4 4"
+                                            />
+                                            {/* Sumbu Y Kiri (Omset Rp) */}
+                                            <text
+                                                x={margin.left - 10}
+                                                y={yPos + 3.5}
+                                                textAnchor="end"
+                                                fontSize="10.5"
+                                                fill="#64748b"
+                                                fontWeight={isBaseline ? "600" : "400"}
+                                                fontFamily="system-ui, -apple-system, sans-serif"
+                                            >
+                                                {formatRupiah(revVal).replace(',00', '')}
+                                            </text>
+                                        </g>
+                                    );
+                                })}
+
+                                {/* 2. Active Point Vertical Dashed Guideline */}
+                                {activePoint && (
+                                    <line 
+                                        x1={activePoint.x} 
+                                        y1={margin.top} 
+                                        x2={activePoint.x} 
+                                        y2={baselineY} 
+                                        stroke="#cbd5e1" 
+                                        strokeWidth="1.2" 
+                                        strokeDasharray="3 3" 
+                                        style={{
+                                            transition: 'x1 0.18s cubic-bezier(0.22, 1, 0.36, 1), x2 0.18s cubic-bezier(0.22, 1, 0.36, 1)'
+                                        }}
+                                    />
+                                )}
+
+                                {/* 3. Rounded Bar Chart (Soft Mint Green Pill Bars matching Mockup) */}
+                                {svgPoints.map((pt, i) => {
+                                    const isActive = activePoint && activePoint.originalIndex === i;
+                                    if (pt.sales <= 0) return null;
+                                    return (
+                                        <rect
+                                            key={`bar-${i}`}
+                                            x={pt.barX}
+                                            y={pt.barY}
+                                            width={pt.barWidth}
+                                            height={Math.max(6, pt.barH)}
+                                            rx="8"
+                                            ry="8"
+                                            fill={isActive ? "url(#mintBarGradActive)" : "url(#mintBarGrad)"}
+                                            style={{ transition: 'all 0.2s ease', cursor: 'pointer' }}
+                                            onClick={() => handlePointClick(pt, i)}
+                                        />
+                                    );
+                                })}
+
+                                {/* 4. Smooth Area Under Curve (Omset Rp) */}
+                                {splineArea && (
+                                    <path 
+                                        d={splineArea} 
+                                        fill="url(#mockAreaGrad)" 
+                                        style={{ transition: 'd 0.3s ease' }}
+                                    />
+                                )}
+
+                                {/* 5. Smooth Spline Curve Line (Omset Rp) */}
+                                {splineLine && (
+                                    <path 
+                                        d={splineLine} 
+                                        fill="none" 
+                                        stroke="#15803d" 
+                                        strokeWidth="2.8" 
+                                        strokeLinecap="round" 
+                                        strokeLinejoin="round" 
+                                        style={{ transition: 'd 0.3s ease' }}
+                                    />
+                                )}
+
+                                {/* 6. Transparent Hitbox Columns for Smooth Hover & Scrub */}
+                                {svgPoints.map((pt, i) => (
+                                    <rect
+                                        key={`hitbox-${i}`}
+                                        x={pt.x - pt.colW / 2}
+                                        y={margin.top}
+                                        width={pt.colW}
+                                        height={plotHeight}
+                                        fill="transparent"
+                                        style={{ cursor: isDragging ? 'grabbing' : 'pointer' }}
+                                        onClick={() => handlePointClick(pt, i)}
+                                        onMouseEnter={() => !isDragging && setHoveredPoint(i)}
+                                    />
+                                ))}
+
+                                {/* 7. Active Point Node (Only on the active point matching Mockup) */}
+                                {activePoint && (
+                                    <g style={{ pointerEvents: 'none' }}>
+                                        {/* Soft Halo */}
+                                        <circle
+                                            cx={activePoint.x}
+                                            cy={activePoint.y}
+                                            r="8"
+                                            fill="#15803d"
+                                            fillOpacity="0.18"
+                                            style={{
+                                                transition: 'cx 0.18s cubic-bezier(0.22, 1, 0.36, 1), cy 0.18s cubic-bezier(0.22, 1, 0.36, 1)'
+                                            }}
+                                        />
+
+                                        {/* Outer Ring & Center Node */}
+                                        <circle
+                                            cx={activePoint.x}
+                                            cy={activePoint.y}
+                                            r="4.5"
+                                            fill="#15803d"
+                                            stroke="#ffffff"
+                                            strokeWidth="2.5"
+                                            style={{
+                                                filter: 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.25))',
+                                                transition: 'cx 0.18s cubic-bezier(0.22, 1, 0.36, 1), cy 0.18s cubic-bezier(0.22, 1, 0.36, 1)'
+                                            }}
+                                        />
+                                    </g>
+                                )}
+
+                                {/* 8. Sumbu X Date Labels (Positioned neatly BELOW the Rp 0 baseline) */}
+                                {svgPoints.map((pt, idx) => {
+                                    const isActive = activePoint && activePoint.originalIndex === idx;
+                                    return (
+                                        <text
+                                            key={`label-${idx}`}
+                                            x={pt.x}
+                                            y={baselineY + 22}
+                                            textAnchor="middle"
+                                            fontSize="11"
+                                            fill={isActive ? "#0f172a" : "#64748b"}
+                                            fontWeight={isActive ? "700" : "400"}
+                                            fontFamily="system-ui, -apple-system, sans-serif"
+                                            style={{ cursor: 'pointer', transition: 'all 0.15s ease' }}
+                                            onClick={() => handlePointClick(pt, idx)}
+                                        >
+                                            {pt.label}
+                                        </text>
+                                    );
+                                })}
+                            </svg>
+
+                            {/* Floating Tooltip matching Mockup */}
+                            {activePoint && (
+                                <div 
+                                    className="position-absolute text-white rounded-3 px-3 py-1.5 shadow-lg"
+                                    style={{
+                                        left: `${(activePoint.x / chartWidth) * 100}%`,
+                                        top: `${(Math.max(10, activePoint.y) / chartHeight) * 100}%`,
+                                        transform: 'translate(-50%, -125%)',
+                                        zIndex: 20,
+                                        minWidth: '130px',
+                                        textAlign: 'center',
+                                        cursor: 'pointer',
+                                        willChange: 'left, top',
+                                        transition: 'left 0.18s cubic-bezier(0.22, 1, 0.36, 1), top 0.18s cubic-bezier(0.22, 1, 0.36, 1)',
+                                        pointerEvents: isDragging ? 'none' : 'auto',
+                                        backgroundColor: '#1e293b',
+                                        boxShadow: '0 8px 20px rgba(0, 0, 0, 0.35)'
+                                    }}
+                                    onClick={() => handleShowDetailModal(activePoint)}
+                                    title="Klik untuk melihat rincian transaksi"
+                                >
+                                    <div className="text-white-50" style={{ fontSize: '10.5px', fontWeight: '500' }}>
+                                        {activePoint.label}
+                                    </div>
+                                    <div className="fw-bold text-white" style={{ fontSize: '12px', marginTop: '1px', letterSpacing: '0.2px' }}>
+                                        {formatRupiah(activePoint.value)} ({activePoint.sales} Pesanan)
+                                    </div>
+
+                                    {/* Downward triangle arrow */}
+                                    <div 
+                                        className="position-absolute"
+                                        style={{
+                                            bottom: '-5px',
+                                            left: '50%',
+                                            transform: 'translateX(-50%)',
+                                            width: 0,
+                                            height: 0,
+                                            borderLeft: '5px solid transparent',
+                                            borderRight: '5px solid transparent',
+                                            borderTop: '5px solid #1e293b'
+                                        }}
+                                    />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Custom Modern Timeline Scrub Slider matching Mockup */}
+                        <div className="mt-3 pt-3 border-top d-flex align-items-center gap-2" style={{ borderColor: '#f1f5f9' }}>
+                            <div className="d-flex align-items-center gap-1.5 text-muted small" style={{ fontSize: '12px', whiteSpace: 'nowrap' }}>
+                                <MoveHorizontal size={14} className="text-secondary" />
+                                <span className="fw-medium text-dark">Geser Timeline:</span>
                             </div>
                             <input 
                                 type="range"
@@ -650,54 +814,53 @@ const SalesAnalyticsOverview = ({
                                     setSelectedPointIndex(idx);
                                     setHoveredPoint(idx);
                                 }}
-                                className="form-range flex-grow-1"
-                                style={{ 
-                                    accentColor: '#16a34a', 
-                                    cursor: 'grab',
-                                    height: '6px'
+                                className="custom-mock-slider flex-grow-1"
+                                style={{
+                                    background: `linear-gradient(to right, #0f766e 0%, #0f766e ${sliderPercent}%, #e2e8f0 ${sliderPercent}%, #e2e8f0 100%)`
                                 }}
+                                title="Geser untuk memilih tanggal"
                             />
-                            <span className="badge bg-success bg-opacity-10 text-success fw-bold px-2.5 py-1 rounded-pill small d-inline-flex align-items-center gap-1" style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>
+                            <span className="badge rounded-pill fw-bold px-3 py-1.5 small d-inline-flex align-items-center gap-1" style={{ fontSize: '11px', whiteSpace: 'nowrap', backgroundColor: '#ecfdf5', color: '#059669' }}>
                                 <MapPin size={11} /> {activePoint?.label || '-'} : {formatRupiah(activePoint?.value || 0)}
                             </span>
                         </div>
 
-                        {/* Interactive Selected Period Summary Bar */}
+                        {/* Interactive Selected Period Summary Bar matching Mockup */}
                         {activePoint && (
-                            <div className="mt-3 p-2.5 bg-light rounded-3 border d-flex flex-wrap align-items-center justify-content-between gap-2 animate-fade-in" style={{ borderColor: '#e2e8f0' }}>
-                                <div className="d-flex align-items-center gap-2">
-                                    <div className="p-2 rounded-2 bg-success bg-opacity-10 text-success">
-                                        <Calendar size={16} />
+                            <div className="mt-3 p-3 bg-light rounded-4 border d-flex flex-wrap align-items-center justify-content-between gap-2 shadow-xs" style={{ borderColor: '#e2e8f0', transition: 'all 0.2s ease' }}>
+                                <div className="d-flex align-items-center gap-2.5">
+                                    <div className="p-2.5 rounded-3 bg-success-subtle text-success d-flex align-items-center justify-content-center">
+                                        <Calendar size={18} />
                                     </div>
                                     <div>
                                         <div className="d-flex align-items-center gap-1.5">
-                                            <strong className="text-dark" style={{ fontSize: '12px' }}>{activePoint.label}</strong>
-                                            <span className="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-0.5" style={{ fontSize: '9.5px' }}>
+                                            <strong className="text-dark" style={{ fontSize: '13px' }}>{activePoint.label}</strong>
+                                            <span className="badge bg-success-subtle text-success rounded-pill px-2 py-0.5 fw-semibold" style={{ fontSize: '9.5px' }}>
                                                 {viewMode === 'daily' ? 'Harian' : 'Bulanan'}
                                             </span>
                                         </div>
-                                        <div className="text-muted" style={{ fontSize: '11px' }}>
-                                            Omset: <strong className="text-success">{formatRupiah(activePoint.value)}</strong> • Transaksi: <strong className="text-dark">{activePoint.sales} Order</strong>
+                                        <div className="text-muted" style={{ fontSize: '11.5px' }}>
+                                            Omset: <strong className="text-dark">{formatRupiah(activePoint.value)}</strong> • Transaksi: <strong className="text-dark">{activePoint.sales} Order</strong>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="d-flex align-items-center gap-1.5">
+                                <div className="d-flex align-items-center gap-2">
                                     <button 
                                         onClick={() => handleShowDetailModal(activePoint)}
-                                        className="btn btn-sm btn-outline-success rounded-pill px-2.5 py-1 d-flex align-items-center gap-1"
-                                        style={{ fontSize: '11px' }}
+                                        className="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1.5 d-flex align-items-center gap-1.5 fw-medium text-secondary bg-white"
+                                        style={{ fontSize: '12px', borderColor: '#cbd5e1' }}
                                     >
                                         <span>Rincian Modal</span>
-                                        <ExternalLink size={12} />
+                                        <ExternalLink size={13} />
                                     </button>
                                     <a 
                                         href="/admin/reports"
-                                        className="btn btn-sm btn-agro rounded-pill px-2.5 py-1 d-flex align-items-center gap-1 shadow-sm"
-                                        style={{ fontSize: '11px' }}
+                                        className="btn btn-sm rounded-pill px-3.5 py-1.5 d-flex align-items-center gap-1.5 text-white fw-medium shadow-xs"
+                                        style={{ fontSize: '12px', backgroundColor: '#0f766e' }}
                                     >
                                         <span>Modul Laporan</span>
-                                        <ArrowUpRight size={13} />
+                                        <ArrowUpRight size={14} />
                                     </a>
                                 </div>
                             </div>
@@ -724,9 +887,19 @@ const SalesAnalyticsOverview = ({
                                 <table className="table table-borderless align-middle mb-0" style={{ tableLayout: 'fixed' }}>
                                     <thead>
                                         <tr className="text-muted" style={{ fontSize: '10.5px' }}>
-                                            <th style={{ width: '100px' }} className="fw-semibold ps-0">Produk</th>
-                                            {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, idx) => (
-                                                <th key={idx} className="text-center fw-normal p-1">{day}</th>
+                                            <th style={{ width: '105px' }} className="fw-semibold ps-0 text-truncate">Produk</th>
+                                            {[
+                                                { label: 'S', full: 'Senin' },
+                                                { label: 'S', full: 'Selasa' },
+                                                { label: 'R', full: 'Rabu' },
+                                                { label: 'K', full: 'Kamis' },
+                                                { label: 'J', full: 'Jumat' },
+                                                { label: 'S', full: 'Sabtu' },
+                                                { label: 'M', full: 'Minggu' }
+                                            ].map((day, idx) => (
+                                                <th key={idx} className="text-center fw-semibold p-1" style={{ fontSize: '10.5px', color: '#64748b' }} title={day.full}>
+                                                    {day.label}
+                                                </th>
                                             ))}
                                         </tr>
                                     </thead>

@@ -27,7 +27,7 @@ class NotificationService
         try {
             $response = Http::withHeaders([
                 'Authorization' => $token,
-            ])->timeout(5)->post('https://api.fonnte.com/send', [
+            ])->timeout(2)->post('https://api.fonnte.com/send', [
                 'target'  => $formattedPhone,
                 'message' => $message,
                 'countryCode' => '62',
@@ -88,67 +88,66 @@ class NotificationService
 
         if ($type === 'admin') {
             $phone = self::formatPhoneNumber($unitPhone);
-            $msg = "🌿 *NOTIFIKASI PESANAN MASUK - POLINELA AGRO*\n\n"
+            $msg = "*NOTIFIKASI PESANAN MASUK - POLINELA AGRO*\n\n"
                  . "Halo Admin *{$unitName}*,\n"
                  . "Ada pesanan baru yang masuk ke sistem:\n\n"
-                 . "📋 *No. Pesanan:* `{$orderNumber}`\n"
-                 . "👤 *Pemesan:* {$customerName} ({$customerPhone})\n"
-                 . "💰 *Total:* *{$grandTotal}*\n"
-                 . "📦 *Rincian Produk:*\n{$itemList}\n"
-                 . "🚚 *Kurir:* {$kurir}\n"
-                 . "📍 *Alamat:* " . ($order->shipping->alamat_lengkap ?? '-') . "\n\n"
-                 . "🔗 *Kelola Pesanan di Panel Admin:* {$frontendUrl}/admin/orders\n\n"
-                 . "_Sistem Notifikasi Otomatis Polinela Agro Digital_";
+                 . "*No. Pesanan:* `{$orderNumber}`\n"
+                 . "*Pemesan:* {$customerName} ({$customerPhone})\n"
+                 . "*Total:* *{$grandTotal}*\n"
+                 . "*Rincian Produk:*\n{$itemList}\n"
+                 . "*Kurir:* {$kurir}\n"
+                 . "*Alamat:* " . ($order->shipping->alamat_lengkap ?? '-') . "\n\n"
+                 . "*Kelola Pesanan di Panel Admin:* {$frontendUrl}/admin/orders\n\n"
+                 . "_Sistem Notifikasi Polinela Agro Digital_";
         } else {
             $phone = self::formatPhoneNumber($customerPhone);
             
             if ($order->status === 'dikirim') {
-                $msg = "🚚 *PESANAN SEDANG DIKIRIM! - POLINELA AGRO*\n\n"
+                $msg = "*PESANAN SEDANG DIKIRIM - POLINELA AGRO*\n\n"
                      . "Halo Kak *{$customerName}*,\n"
-                     . "Kabar baik! Paket produk perkebunan Anda dari *{$unitName}* telah diserahkan ke pihak ekspedisi.\n\n"
-                     . "📋 *No. Pesanan:* `{$orderNumber}`\n"
-                     . "📦 *Ekspedisi / Kurir:* {$kurir}\n"
-                     . "🔖 *Nomor Resi:* *{$resi}*\n"
-                     . ($customNote ? "📝 *Catatan Kurir/Admin:* {$customNote}\n" : "")
-                     . "\n📦 *Rincian Produk:*\n{$itemList}\n"
-                     . "Pantau status pengiriman & invoice resmi Anda di:\n{$orderUrl}\n\n"
-                     . "Terima kasih telah berbelanja di *Polinela Agro Digital*! 🌱";
+                     . "Paket produk perkebunan Anda dari *{$unitName}* telah diserahkan ke pihak ekspedisi.\n\n"
+                     . "*No. Pesanan:* `{$orderNumber}`\n"
+                     . "*Ekspedisi / Kurir:* {$kurir}\n"
+                     . "*Nomor Resi:* *{$resi}*\n"
+                     . ($customNote ? "*Catatan Kurir/Admin:* {$customNote}\n" : "")
+                     . "\n*Rincian Produk:*\n{$itemList}\n"
+                     . "Pantau status pengiriman dan invoice Anda di:\n{$orderUrl}\n\n"
+                     . "Terima kasih telah berbelanja di Polinela Agro Digital.";
             } elseif ($order->status === 'selesai') {
-                $msg = "✅ *PESANAN SELESAI DITERIMA - POLINELA AGRO*\n\n"
+                $msg = "*PESANAN SELESAI DITERIMA - POLINELA AGRO*\n\n"
                      . "Halo Kak *{$customerName}*,\n"
-                     . "Terima kasih banyak telah berbelanja produk Teaching Factory di *{$unitName}* Polinela Agro Digital.\n\n"
-                     . "Pesanan `{$orderNumber}` telah selesai diterima. Jangan lupa untuk memberikan rating & ulasan produk Anda di aplikasi ya:\n{$orderUrl}\n\n"
-                     . "_Salam hangat dari civitas Politeknik Negeri Lampung!_ 🌾";
+                     . "Terima kasih telah berbelanja produk Teaching Factory di *{$unitName}* Polinela Agro Digital.\n\n"
+                     . "Pesanan `{$orderNumber}` telah selesai diterima. Anda dapat memberikan ulasan produk di aplikasi melalui tautan:\n{$orderUrl}\n\n"
+                     . "_Salam hangat dari civitas Politeknik Negeri Lampung._";
             } elseif ($order->payment && $order->payment->status === 'lunas' || in_array($order->status, ['diproses', 'dikirim', 'selesai'])) {
                 $address = $order->shipping ? ($order->shipping->alamat_lengkap . ', ' . ($order->shipping->kota ?? '') . ' ' . ($order->shipping->kode_pos ?? '')) : ($order->user->alamat ?? '-');
                 $recipient = $order->shipping->nama_penerima ?? $order->user->nama ?? 'Pelanggan';
                 $recipientHp = $order->shipping->no_hp ?? $order->user->no_hp ?? '-';
 
-                $msg = "✨ *PEMBAYARAN DIVERIFIKASI (LUNAS) - POLINELA AGRO*\n\n"
+                $msg = "*PEMBAYARAN TERVERIFIKASI (LUNAS) - POLINELA AGRO*\n\n"
                      . "Halo Kak *{$customerName}*,\n"
-                     . "Pembayaran untuk pesanan `{$orderNumber}` sebesar *{$grandTotal}* telah BERHASIL diverifikasi *LUNAS* secara otomatis oleh sistem.\n\n"
-                     . "📋 *Rincian Pesanan:*\n"
-                     . "🏪 *Unit Toko:* {$unitName}\n"
-                     . "👤 *Penerima:* {$recipient} ({$recipientHp})\n"
-                     . "📍 *Alamat Pengiriman:* {$address}\n"
-                     . "🚚 *Ekspedisi / Kurir:* {$kurir}\n\n"
-                     . "📦 *Produk yang Dipesan:*\n{$itemList}\n"
-                     . "Saat ini pesanan Anda sedang dalam proses penyiapan dan pengemasan (packing) higienis oleh tim unit toko dan akan segera diserahkan ke kurir untuk diantar ke alamat Anda.\n\n"
-                     . "Pantau progres pesanan, resi, & cetak invoice resmi Anda di:\n{$orderUrl}\n\n"
-                     . "Terima kasih telah berbelanja di *Polinela Agro Digital*! 🌱\n"
+                     . "Pembayaran untuk pesanan `{$orderNumber}` sebesar *{$grandTotal}* telah diverifikasi lunas oleh sistem.\n\n"
+                     . "*Rincian Pesanan:*\n"
+                     . "*Unit Toko:* {$unitName}\n"
+                     . "*Penerima:* {$recipient} ({$recipientHp})\n"
+                     . "*Alamat Pengiriman:* {$address}\n"
+                     . "*Ekspedisi / Kurir:* {$kurir}\n\n"
+                     . "*Produk yang Dipesan:*\n{$itemList}\n"
+                     . "Pesanan Anda sedang dipersiapkan oleh tim unit toko untuk diserahkan ke pihak kurir.\n\n"
+                     . "Pantau progres pesanan dan unduh invoice resmi di:\n{$orderUrl}\n\n"
+                     . "Terima kasih telah berbelanja di Polinela Agro Digital.\n"
                      . "_Teaching Factory Politeknik Negeri Lampung_";
             } else {
-                $msg = "🌿 *TAGIHAN PESANAN BARU - POLINELA AGRO*\n\n"
+                $msg = "*TAGIHAN PESANAN BARU - POLINELA AGRO*\n\n"
                      . "Halo Kak *{$customerName}*,\n"
-                     . "Terima kasih telah memesan produk Teaching Factory di *Polinela Agro Digital*.\n\n"
-                     . "📋 *No. Pesanan:* `{$orderNumber}`\n"
-                     . "🏪 *Unit Toko:* {$unitName}\n"
-                     . "💰 *Total Tagihan:* *{$grandTotal}*\n\n"
-                     . "📦 *Rincian Produk:*\n{$itemList}\n"
-                     . "💳 *Metode Pembayaran:* Otomatis via Midtrans (Virtual Account BCA/Mandiri/BRI/BNI, QRIS, GoPay, ShopeePay)\n\n"
-                     . "Selesaikan pembayaran instan Anda secara online melalui tautan resmi berikut:\n{$orderUrl}\n\n"
-                     . "_Pembayaran akan langsung diverifikasi otomatis dalam hitungan detik._\n"
-                     . "Terima kasih! 🌱";
+                     . "Terima kasih telah memesan produk Teaching Factory di Polinela Agro Digital.\n\n"
+                     . "*No. Pesanan:* `{$orderNumber}`\n"
+                     . "*Unit Toko:* {$unitName}\n"
+                     . "*Total Tagihan:* *{$grandTotal}*\n\n"
+                     . "*Rincian Produk:*\n{$itemList}\n"
+                     . "*Metode Pembayaran:* Otomatis via Midtrans (Virtual Account BCA/Mandiri/BRI/BNI, QRIS, GoPay, ShopeePay)\n\n"
+                     . "Selesaikan pembayaran online Anda melalui tautan resmi berikut:\n{$orderUrl}\n\n"
+                     . "Terima kasih.";
             }
         }
 
@@ -412,15 +411,15 @@ class NotificationService
         $orderUrl = "{$frontendUrl}/pesanan/{$firstOrder->id}";
 
         // Teks WhatsApp Gabungan
-        $msg = "🌿 *TAGIHAN PESANAN MULTI-STORE - POLINELA AGRO*\n\n"
+        $msg = "*TAGIHAN PESANAN MULTI-STORE - POLINELA AGRO*\n\n"
              . "Halo Kak *{$customerName}*,\n"
              . "Pesanan belanja Anda dari *" . implode(', ', array_unique($unitNames)) . "* berhasil dibuat dalam 1 transaksi terpadu.\n\n"
-             . "📋 *Kode Transaksi Bersama:* `{$sharedTrxNumber}`\n"
-             . "💰 *Total Seluruh Tagihan (1x Bayar):* *{$formattedTotal}*\n\n"
-             . "📦 *Rincian Belanja Seluruh Toko:*\n{$allItemLines}"
-             . "💳 *Metode Pembayaran:* Otomatis via Midtrans (Virtual Account BCA/Mandiri/BRI/BNI, QRIS, GoPay, ShopeePay)\n\n"
-             . "Selesaikan pembayaran online instan Anda melalui tautan resmi berikut:\n{$orderUrl}\n\n"
-             . "_Cukup lakukan 1 kali pembayaran untuk semua toko di atas dan pesanan otomatis diverifikasi lunas._\nTerima kasih! 🌱";
+             . "*Kode Transaksi Bersama:* `{$sharedTrxNumber}`\n"
+             . "*Total Seluruh Tagihan (1x Bayar):* *{$formattedTotal}*\n\n"
+             . "*Rincian Belanja Seluruh Toko:*\n{$allItemLines}"
+             . "*Metode Pembayaran:* Otomatis via Midtrans (Virtual Account BCA/Mandiri/BRI/BNI, QRIS, GoPay, ShopeePay)\n\n"
+             . "Selesaikan pembayaran online Anda melalui tautan resmi berikut:\n{$orderUrl}\n\n"
+             . "_Lakukan 1 kali pembayaran untuk semua toko di atas dan pesanan otomatis diverifikasi lunas._\nTerima kasih.";
 
         // Kirim 1x WhatsApp
         self::sendWhatsAppViaFonnte($customerPhone, $msg);

@@ -9,6 +9,7 @@ use App\Models\Stock;
 use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -32,7 +33,7 @@ class ProductController extends Controller
             });
         }
 
-        $products = $query->orderBy('id', 'desc')->paginate($request->get('per_page', 20));
+        $products = $query->orderBy('id', 'desc')->paginate($request->get('per_page', 20))->withQueryString();
 
         return response()->json([
             'status'  => 'success',
@@ -44,6 +45,10 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         $user = $request->user();
+        if (!in_array($user->role, ['superadmin', 'admin_unit'])) {
+            return response()->json(['status' => 'error', 'success' => false, 'message' => 'Akses ditolak.'], 403);
+        }
+
         $role = $user->role;
         $unitId = ($role === 'admin_unit') ? $user->unit_id : ($request->unit_id ?? $user->unit_id);
 
@@ -51,19 +56,26 @@ class ProductController extends Controller
             'nama_produk' => 'required|string|max:200',
             'category_id' => 'required|exists:categories,id',
             'harga'       => 'required|numeric|min:0',
+            'stok'        => 'nullable|integer|min:0',
+            'stok_awal'   => 'nullable|integer|min:0',
             'satuan'      => 'nullable|string|max:50',
             'berat_gram'  => 'nullable|integer|min:1',
             'deskripsi'   => 'nullable|string',
-            'gambar'      => 'nullable|image|max:5120',
+            'gambar'      => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+        ], [
+            'stok.min'      => 'Stok produk tidak boleh bernilai negatif (minimal 0).',
+            'stok_awal.min' => 'Stok awal tidak boleh bernilai negatif (minimal 0).',
+            'harga.min'     => 'Harga produk tidak boleh bernilai negatif.',
         ]);
 
-        $stok = $request->input('stok') ?? $request->input('stok_awal') ?? 10;
+        $stok = max(0, (int) ($request->input('stok') ?? $request->input('stok_awal') ?? 10));
         $isActive = $request->has('is_active') ? $request->boolean('is_active') : true;
 
         $filename = 'default-product.png';
         if ($request->hasFile('gambar')) {
             $file = $request->file('gambar');
-            $filename = 'prod_' . time() . '_' . Str::random(5) . '.' . $file->getClientOriginalExtension();
+            $ext = $file->guessExtension() ?: $file->extension() ?: 'jpg';
+            $filename = 'prod_' . time() . '_' . Str::random(5) . '.' . $ext;
             $uploadDir = public_path('uploads/produk');
             if (!file_exists($uploadDir)) {
                 @mkdir($uploadDir, 0777, true);
@@ -73,41 +85,45 @@ class ProductController extends Controller
 
         $slug = Str::slug($validated['nama_produk']) . '-' . Str::random(4);
 
-        $product = Product::create([
-            'unit_id'      => $unitId,
-            'category_id'  => $validated['category_id'],
-            'nama_produk'  => $validated['nama_produk'],
-            'slug'         => $slug,
-            'deskripsi'    => $validated['deskripsi'] ?? null,
-            'harga'        => $validated['harga'],
-            'stok'         => (int) $stok,
-            'satuan'       => $validated['satuan'] ?? 'Pcs',
-            'berat_gram'   => $validated['berat_gram'] ?? 500,
-            'gambar_utama' => $filename,
-            'status'       => $isActive ? 'aktif' : 'nonaktif',
-            'total_terjual'=> 0,
-        ]);
-
-        // Catat stok awal
-        if ($product->stok > 0) {
-            Stock::create([
-                'product_id' => $product->id,
-                'tipe'       => 'masuk',
-                'qty'        => $product->stok,
-                'sisa_stok'  => $product->stok,
-                'keterangan' => 'Stok awal produk baru',
-                'user_id'    => $user->id,
+        $product = DB::transaction(function () use ($unitId, $validated, $slug, $stok, $filename, $isActive, $user, $request) {
+            $prod = Product::create([
+                'unit_id'      => $unitId,
+                'category_id'  => $validated['category_id'],
+                'nama_produk'  => $validated['nama_produk'],
+                'slug'         => $slug,
+                'deskripsi'    => $validated['deskripsi'] ?? null,
+                'harga'        => $validated['harga'],
+                'stok'         => (int) $stok,
+                'satuan'       => $validated['satuan'] ?? 'Pcs',
+                'berat_gram'   => $validated['berat_gram'] ?? 500,
+                'gambar_utama' => $filename,
+                'status'       => $isActive ? 'aktif' : 'nonaktif',
+                'total_terjual'=> 0,
             ]);
-        }
 
-        ActivityLog::create([
-            'user_id'   => $user->id,
-            'aksi'      => 'Tambah Produk',
-            'modul'     => 'Produk',
-            'ip_address'=> $request->ip(),
-            'user_agent'=> $request->userAgent(),
-            'deskripsi' => "Menambahkan produk '{$product->nama_produk}' ke unit #{$unitId}",
-        ]);
+            // Catat stok awal
+            if ($prod->stok > 0) {
+                Stock::create([
+                    'product_id' => $prod->id,
+                    'tipe'       => 'masuk',
+                    'qty'        => $prod->stok,
+                    'sisa_stok'  => $prod->stok,
+                    'keterangan' => 'Stok awal produk baru',
+                    'user_id'    => $user->id,
+                ]);
+            }
+
+            ActivityLog::create([
+                'user_id'   => $user->id,
+                'aksi'      => 'Tambah Produk',
+                'modul'     => 'Produk',
+                'ip_address'=> $request->ip(),
+                'user_agent'=> $request->userAgent(),
+                'deskripsi' => "Menambahkan produk '{$prod->nama_produk}' ke unit #{$unitId}",
+            ]);
+
+            return $prod;
+        });
 
         return response()->json([
             'status'  => 'success',
@@ -134,15 +150,21 @@ class ProductController extends Controller
             'nama_produk' => 'required|string|max:200',
             'category_id' => 'required|exists:categories,id',
             'harga'       => 'required|numeric|min:0',
+            'stok'        => 'nullable|integer|min:0',
+            'stok_awal'   => 'nullable|integer|min:0',
             'satuan'      => 'nullable|string|max:50',
             'berat_gram'  => 'nullable|integer|min:1',
             'deskripsi'   => 'nullable|string',
-            'gambar'      => 'nullable|image|max:5120',
+            'gambar'      => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+        ], [
+            'stok.min'  => 'Stok produk tidak boleh bernilai negatif (minimal 0).',
+            'harga.min' => 'Harga produk tidak boleh bernilai negatif.',
         ]);
 
         if ($request->hasFile('gambar')) {
             $file = $request->file('gambar');
-            $filename = 'prod_' . time() . '_' . Str::random(5) . '.' . $file->getClientOriginalExtension();
+            $ext = $file->guessExtension() ?: $file->extension() ?: 'jpg';
+            $filename = 'prod_' . time() . '_' . Str::random(5) . '.' . $ext;
             $uploadDir = public_path('uploads/produk');
             if (!file_exists($uploadDir)) {
                 @mkdir($uploadDir, 0777, true);
@@ -152,7 +174,8 @@ class ProductController extends Controller
         }
 
         $stokLama = $product->stok;
-        $stokBaru = $request->has('stok') ? (int) $request->input('stok') : ($request->has('stok_awal') ? (int) $request->input('stok_awal') : $stokLama);
+        $stokRaw = $request->has('stok') ? $request->input('stok') : ($request->has('stok_awal') ? $request->input('stok_awal') : $stokLama);
+        $stokBaru = max(0, (int) $stokRaw);
 
         $product->nama_produk = $validated['nama_produk'];
         $product->category_id = $validated['category_id'];
@@ -217,22 +240,24 @@ class ProductController extends Controller
             'stok' => 'required|integer|min:0',
         ]);
 
-        $stokLama = $product->stok;
-        $stokBaru = (int) $validated['stok'];
-        $product->stok = $stokBaru;
-        $product->save();
+        DB::transaction(function () use ($product, $validated) {
+            $stokLama = $product->stok;
+            $stokBaru = (int) $validated['stok'];
+            $product->stok = $stokBaru;
+            $product->save();
 
-        if ($stokBaru !== $stokLama) {
-            $selisih = $stokBaru - $stokLama;
-            Stock::create([
-                'product_id' => $product->id,
-                'tipe'       => ($selisih > 0) ? 'masuk' : 'keluar',
-                'qty'        => abs($selisih),
-                'sisa_stok'  => $stokBaru,
-                'keterangan' => 'Update stok cepat oleh admin unit',
-                'user_id'    => $user->id,
-            ]);
-        }
+            if ($stokBaru !== $stokLama) {
+                $selisih = $stokBaru - $stokLama;
+                Stock::create([
+                    'product_id' => $product->id,
+                    'tipe'       => ($selisih > 0) ? 'masuk' : 'keluar',
+                    'qty'        => abs($selisih),
+                    'sisa_stok'  => $stokBaru,
+                    'keterangan' => 'Update stok cepat oleh admin unit',
+                    'user_id'    => auth()->id(),
+                ]);
+            }
+        });
 
         return response()->json([
             'status'  => 'success',
@@ -245,6 +270,10 @@ class ProductController extends Controller
     public function destroy(Request $request, $id)
     {
         $user = $request->user();
+        if (!in_array($user->role, ['superadmin', 'admin_unit'])) {
+            return response()->json(['status' => 'error', 'success' => false, 'message' => 'Akses ditolak.'], 403);
+        }
+
         $product = Product::find($id);
 
         if (!$product) {

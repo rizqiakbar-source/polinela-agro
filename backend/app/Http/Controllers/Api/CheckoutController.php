@@ -37,40 +37,16 @@ class CheckoutController extends Controller
             return response()->json(['status' => 'error', 'success' => false, 'valid' => false, 'message' => 'Kode voucher tidak valid atau tidak ditemukan.'], 404);
         }
 
-        $now = date('Y-m-d');
-        if ($voucher->tgl_mulai && $voucher->tgl_mulai > $now) {
-            return response()->json(['status' => 'error', 'success' => false, 'valid' => false, 'message' => 'Voucher belum dapat digunakan.'], 400);
+        [$valid, $diskon, $msg] = $voucher->calculateDiscount($subtotal);
+        if (!$valid) {
+            return response()->json(['status' => 'error', 'success' => false, 'valid' => false, 'message' => $msg], 400);
         }
-        if ($voucher->tgl_berakhir && $voucher->tgl_berakhir < $now) {
-            return response()->json(['status' => 'error', 'success' => false, 'valid' => false, 'message' => 'Voucher telah kedaluwarsa.'], 400);
-        }
-        if ($voucher->kuota && $voucher->terpakai >= $voucher->kuota) {
-            return response()->json(['status' => 'error', 'success' => false, 'valid' => false, 'message' => 'Kuota pemakaian voucher telah habis.'], 400);
-        }
-        if ($subtotal < $voucher->min_belanja) {
-            return response()->json([
-                'status'  => 'error',
-                'success' => false,
-                'valid'   => false,
-                'message' => 'Minimal belanja untuk voucher ini adalah Rp ' . number_format($voucher->min_belanja, 0, ',', '.'),
-            ], 400);
-        }
-
-        $diskon = ($voucher->tipe === 'persen')
-            ? ($subtotal * ($voucher->diskon / 100))
-            : $voucher->diskon;
-
-        if ($voucher->max_diskon && $diskon > $voucher->max_diskon) {
-            $diskon = $voucher->max_diskon;
-        }
-
-        $diskon = min($diskon, $subtotal);
 
         return response()->json([
             'status'       => 'success',
             'success'      => true,
             'valid'        => true,
-            'message'      => "Voucher '{$voucher->nama}' berhasil digunakan!",
+            'message'      => $msg,
             'data'         => [
                 'voucher'      => $voucher,
                 'diskon'       => (float) $diskon,
@@ -133,52 +109,118 @@ class CheckoutController extends Controller
             ], 400);
         }
 
-        // Kelompokkan produk berdasarkan unit toko
-        $unitGroups = [];
-        $overallSubtotal = 0;
+        // Validasi kuantitas seluruh item keranjang (Cegah kuantitas negatif/nol)
         foreach ($cartItems as $item) {
-            $p = $item->product;
-            if (!$p) continue;
-
-            $uId = $p->unit_id ?: 1;
-            $unitGroups[$uId][] = $item;
-            $overallSubtotal += ($p->harga * $item->qty);
-        }
-
-        $numUnits = count($unitGroups);
-
-        // Tarif Ongkir per unit
-        $ongkirPerUnit = ($kurirOption === 'ambil_sendiri') ? 0 : 10000;
-        $totalOngkir = $ongkirPerUnit * $numUnits;
-
-        // Diskon Voucher
-        $totalDiskon = 0;
-        if (!empty($voucherCode)) {
-            $voucher = Voucher::where('kode', strtoupper($voucherCode))->where('is_active', true)->first();
-            if ($voucher && $overallSubtotal >= $voucher->min_belanja) {
-                $totalDiskon = ($voucher->tipe === 'persen')
-                    ? ($overallSubtotal * ($voucher->diskon / 100))
-                    : $voucher->diskon;
-                if ($voucher->max_diskon && $totalDiskon > $voucher->max_diskon) {
-                    $totalDiskon = $voucher->max_diskon;
-                }
-                $totalDiskon = min($totalDiskon, $overallSubtotal);
-                $voucher->increment('terpakai');
+            if ((int) $item->qty < 1) {
+                return response()->json([
+                    'status'  => 'error',
+                    'success' => false,
+                    'message' => 'Terdapat kuantitas produk tidak valid di keranjang belanja Anda (minimal 1 unit).',
+                ], 422);
             }
         }
 
-        $sharedTrxNumber = 'TRX-' . strtoupper(Str::random(8));
-        $createdOrders = [];
-        $createdOrderModels = [];
-
+        // 1. Mulai Database Transaction untuk menjamin ACID & integritas data
         DB::beginTransaction();
         try {
+            // 2. Kunci dan validasi stok semua produk di keranjang (Pessimistic Lock - Anti Race Condition)
+            $productIds = $cartItems->pluck('product_id')->unique()->toArray();
+            
+            // SELECT ... FOR UPDATE untuk mengunci baris produk selama transaksi berlangsung
+            $lockedProducts = Product::whereIn('id', $productIds)
+                ->whereNull('deleted_at')
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            // Hitung total kebutuhan kuantitas per produk dari seluruh item keranjang
+            $productDemands = [];
+            foreach ($cartItems as $item) {
+                $productDemands[$item->product_id] = ($productDemands[$item->product_id] ?? 0) + $item->qty;
+            }
+
+            // Validasi ketersediaan dan stok untuk setiap produk
+            foreach ($productDemands as $pId => $neededQty) {
+                $prod = $lockedProducts->get($pId);
+
+                if (!$prod || $prod->status !== 'aktif') {
+                    DB::rollBack();
+                    $productName = $cartItems->firstWhere('product_id', $pId)?->product?->nama_produk ?? 'Produk';
+                    return response()->json([
+                        'status'  => 'error',
+                        'success' => false,
+                        'message' => "Maaf, produk '{$productName}' saat ini sedang tidak aktif atau tidak tersedia.",
+                    ], 400);
+                }
+
+                if ($prod->stok < $neededQty) {
+                    DB::rollBack();
+                    if ($prod->stok <= 0) {
+                        return response()->json([
+                            'status'  => 'error',
+                            'success' => false,
+                            'message' => "Maaf, stok untuk produk '{$prod->nama_produk}' sudah habis (baru saja dibeli pelanggan lain).",
+                        ], 400);
+                    } else {
+                        return response()->json([
+                            'status'  => 'error',
+                            'success' => false,
+                            'message' => "Maaf, stok untuk produk '{$prod->nama_produk}' tidak mencukupi (Tersisa: {$prod->stok}, permintaan: {$neededQty}).",
+                        ], 400);
+                    }
+                }
+            }
+
+            // Kelompokkan produk berdasarkan unit toko
+            $unitGroups = [];
+            $overallSubtotal = 0;
+            foreach ($cartItems as $item) {
+                $p = $lockedProducts->get($item->product_id);
+                if (!$p) continue;
+
+                $uId = $p->unit_id ?: 1;
+                $unitGroups[$uId][] = $item;
+                $overallSubtotal += ($p->harga * $item->qty);
+            }
+
+            $numUnits = count($unitGroups);
+
+            // Tarif Ongkir per unit
+            $ongkirPerUnit = ($kurirOption === 'ambil_sendiri') ? 0 : 10000;
+            $totalOngkir = $ongkirPerUnit * $numUnits;
+
+            // Diskon Voucher (Atomic & aman dalam transaksi)
+            $totalDiskon = 0;
+            if (!empty($voucherCode)) {
+                $voucher = Voucher::where('kode', strtoupper($voucherCode))
+                    ->where('is_active', true)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($voucher) {
+                    [$valid, $diskon, $msg] = $voucher->calculateDiscount($overallSubtotal);
+                    if (!$valid) {
+                        DB::rollBack();
+                        return response()->json(['status' => 'error', 'success' => false, 'message' => $msg], 400);
+                    }
+                    $totalDiskon = $diskon;
+                    $voucher->increment('terpakai');
+                }
+            }
+
+            $sharedTrxNumber = 'TRX-' . strtoupper(Str::random(8));
+            $createdOrders = [];
+            $createdOrderModels = [];
+
             foreach ($unitGroups as $uId => $groupItems) {
                 $unitSubtotal = 0;
                 $unitBerat = 0;
                 foreach ($groupItems as $it) {
-                    $unitSubtotal += ($it->product->harga * $it->qty);
-                    $unitBerat += (($it->product->berat_gram ?: 500) * $it->qty);
+                    $p = $lockedProducts->get($it->product_id);
+                    $hargaItem = $p ? $p->harga : $it->product->harga;
+                    $beratItem = $p ? ($p->berat_gram ?: 500) : (($it->product->berat_gram ?: 500));
+                    $unitSubtotal += ($hargaItem * $it->qty);
+                    $unitBerat += ($beratItem * $it->qty);
                 }
 
                 $ratio = $overallSubtotal > 0 ? ($unitSubtotal / $overallSubtotal) : (1 / $numUnits);
@@ -188,7 +230,7 @@ class CheckoutController extends Controller
 
                 $orderNumber = 'PNA-' . date('Ymd') . '-' . strtoupper(Str::random(5));
 
-                // 1. Simpan Order
+                // Simpan Order
                 $order = Order::create([
                     'order_number' => $orderNumber,
                     'user_id'      => $userId,
@@ -202,9 +244,9 @@ class CheckoutController extends Controller
                     'catatan'      => $catatan,
                 ]);
 
-                // 2. Simpan Order Details & Potong Stok
+                // Simpan Order Details & Potong Stok secara aman
                 foreach ($groupItems as $item) {
-                    $prod = $item->product;
+                    $prod = $lockedProducts->get($item->product_id);
 
                     OrderDetail::create([
                         'order_id'    => $order->id,
@@ -216,6 +258,7 @@ class CheckoutController extends Controller
                         'berat'       => ($prod->berat_gram ?: 500) * $item->qty,
                     ]);
 
+                    // Potong stok dan catat total terjual
                     $prod->decrement('stok', $item->qty);
                     $prod->increment('total_terjual', $item->qty);
 
@@ -227,9 +270,12 @@ class CheckoutController extends Controller
                         'keterangan' => "Pesanan #{$orderNumber}",
                         'user_id'    => $userId,
                     ]);
+
+                    // Trigger Peringatan Otomatis jika Stok Menipis (<= stok_min)
+                    \App\Services\StockService::checkLowStockAlert($prod->fresh());
                 }
 
-                // 3. Simpan Payment (Linked with shared transaction ID)
+                // Simpan Payment
                 Payment::create([
                     'order_id'           => $order->id,
                     'metode'             => $metodeBayar,
@@ -241,7 +287,7 @@ class CheckoutController extends Controller
                     'status'             => 'pending',
                 ]);
 
-                // 4. Simpan Shipping
+                // Simpan Shipping
                 Shipping::create([
                     'order_id'         => $order->id,
                     'kurir'            => $kurirOption,
@@ -269,7 +315,7 @@ class CheckoutController extends Controller
                 $createdOrderModels[] = $order;
             }
 
-            // 5. Bersihkan keranjang belanja
+            // Bersihkan keranjang belanja
             Cart::where('user_id', $userId)->delete();
 
             DB::commit();

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Lock, Mail, User, Phone, MapPin, ArrowRight } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 const Register = () => {
     const { register } = useAuth();
@@ -27,12 +28,29 @@ const Register = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (formData.password !== formData.password_confirmation) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Konfirmasi Password Tidak Cocok',
+                text: 'Pastikan kata sandi dan ulangi kata sandi terisi sama persis.',
+            });
+            return;
+        }
         setSubmitting(true);
         const res = await register(formData);
         setSubmitting(false);
 
-        if (res.success) {
-            navigate('/');
+        if (res?.success) {
+            if (res.requires_otp) {
+                navigate('/verify-otp', {
+                    state: {
+                        email: res.email || formData.email,
+                        debug_otp: res.debug_otp,
+                    },
+                });
+            } else {
+                navigate('/');
+            }
         }
     };
 
@@ -71,14 +89,16 @@ const Register = () => {
                     <form onSubmit={handleSubmit}>
                         <div className="row g-3 mb-3">
                             <div className="col-md-6">
-                                <label className="form-label small fw-semibold">Nama Lengkap</label>
+                                <label htmlFor="reg-nama" className="form-label small fw-semibold">Nama Lengkap</label>
                                 <div className="input-group">
                                     <span className="input-group-text bg-light border-end-0">
                                         <User size={16} className="text-muted" />
                                     </span>
                                     <input
+                                        id="reg-nama"
                                         type="text"
                                         name="nama_lengkap"
+                                        autoComplete="name"
                                         className="form-control bg-light border-start-0 ps-0"
                                         placeholder="Nama Lengkap"
                                         required
@@ -88,10 +108,12 @@ const Register = () => {
                                 </div>
                             </div>
                             <div className="col-md-6">
-                                <label className="form-label small fw-semibold">Username</label>
+                                <label htmlFor="reg-username" className="form-label small fw-semibold">Username</label>
                                 <input
+                                    id="reg-username"
                                     type="text"
                                     name="username"
+                                    autoComplete="username"
                                     className="form-control bg-light"
                                     placeholder="Username"
                                     required
@@ -103,14 +125,16 @@ const Register = () => {
 
                         <div className="row g-3 mb-3">
                             <div className="col-md-6">
-                                <label className="form-label small fw-semibold">Email</label>
+                                <label htmlFor="reg-email" className="form-label small fw-semibold">Email</label>
                                 <div className="input-group">
                                     <span className="input-group-text bg-light border-end-0">
                                         <Mail size={16} className="text-muted" />
                                     </span>
                                     <input
+                                        id="reg-email"
                                         type="email"
                                         name="email"
+                                        autoComplete="email"
                                         className="form-control bg-light border-start-0 ps-0"
                                         placeholder="email@domain.com"
                                         required
@@ -120,14 +144,16 @@ const Register = () => {
                                 </div>
                             </div>
                             <div className="col-md-6">
-                                <label className="form-label small fw-semibold">No. WhatsApp / HP</label>
+                                <label htmlFor="reg-nohp" className="form-label small fw-semibold">No. WhatsApp / HP</label>
                                 <div className="input-group">
                                     <span className="input-group-text bg-light border-end-0">
                                         <Phone size={16} className="text-muted" />
                                     </span>
                                     <input
-                                        type="text"
+                                        id="reg-nohp"
+                                        type="tel"
                                         name="no_hp"
+                                        autoComplete="tel"
                                         className="form-control bg-light border-start-0 ps-0"
                                         placeholder="08123456789"
                                         required
@@ -139,14 +165,16 @@ const Register = () => {
                         </div>
 
                         <div className="mb-3">
-                            <label className="form-label small fw-semibold">Alamat Pengiriman</label>
+                            <label htmlFor="reg-alamat" className="form-label small fw-semibold">Alamat Pengiriman</label>
                             <div className="input-group">
                                 <span className="input-group-text bg-light border-end-0">
                                     <MapPin size={16} className="text-muted" />
                                 </span>
                                 <input
+                                    id="reg-alamat"
                                     type="text"
                                     name="alamat"
+                                    autoComplete="street-address"
                                     className="form-control bg-light border-start-0 ps-0"
                                     placeholder="Alamat lengkap tempat tinggal"
                                     value={formData.alamat}
@@ -157,14 +185,16 @@ const Register = () => {
 
                         <div className="row g-3 mb-4">
                             <div className="col-md-6">
-                                <label className="form-label small fw-semibold">Password</label>
+                                <label htmlFor="reg-password" className="form-label small fw-semibold">Password</label>
                                 <div className="input-group">
                                     <span className="input-group-text bg-light border-end-0">
                                         <Lock size={16} className="text-muted" />
                                     </span>
                                     <input
+                                        id="reg-password"
                                         type="password"
                                         name="password"
+                                        autoComplete="new-password"
                                         className="form-control bg-light border-start-0 ps-0"
                                         placeholder="••••••••"
                                         required
@@ -175,10 +205,12 @@ const Register = () => {
                                 </div>
                             </div>
                             <div className="col-md-6">
-                                <label className="form-label small fw-semibold">Ulangi Password</label>
+                                <label htmlFor="reg-pass-confirm" className="form-label small fw-semibold">Ulangi Password</label>
                                 <input
+                                    id="reg-pass-confirm"
                                     type="password"
                                     name="password_confirmation"
+                                    autoComplete="new-password"
                                     className="form-control bg-light"
                                     placeholder="••••••••"
                                     required

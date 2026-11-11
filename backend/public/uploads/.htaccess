@@ -1,0 +1,24 @@
+# Nonaktifkan eksekusi script di direktori upload untuk mencegah backdoor / web shell
+Options -Indexes -ExecCGI
+
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>
+
+# Tolak akses ke file script executable
+<FilesMatch "\.(php|phtml|php3|php4|php5|php7|php8|phps|cgi|pl|exe|sh|bat)$">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>
+
+# Hanya izinkan format media yang sah (SVG dilarang untuk mencegah Stored XSS)
+<FilesMatch "\.(?i:jpe?g|png|gif|webp|pdf)$">
+    Order Allow,Deny
+    Allow from all
+</FilesMatch>

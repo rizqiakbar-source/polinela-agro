@@ -24,6 +24,7 @@ class User extends Authenticatable
         'unit_id',
         'alamat',
         'is_active',
+        'email_verified_at',
     ];
 
     protected $appends = [
@@ -60,10 +61,11 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'is_active'  => 'boolean',
-            'unit_id'    => 'integer',
-            'created_at' => 'datetime',
-            'updated_at' => 'datetime',
+            'is_active'          => 'boolean',
+            'unit_id'            => 'integer',
+            'email_verified_at'  => 'datetime',
+            'created_at'         => 'datetime',
+            'updated_at'         => 'datetime',
         ];
     }
 

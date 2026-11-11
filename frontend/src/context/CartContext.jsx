@@ -8,7 +8,6 @@ const CartContext = createContext(null);
 export const CartProvider = ({ children }) => {
     const { user, token } = useAuth();
     const [cartGroups, setCartGroups] = useState([]);
-    const [cartCount, setCartCount] = useState(0);
     const [cartSummary, setCartSummary] = useState({
         total_items: 0,
         subtotal: 0,
@@ -16,31 +15,34 @@ export const CartProvider = ({ children }) => {
         total_units: 0,
     });
     const [loading, setLoading] = useState(false);
+    const [updatingCartId, setUpdatingCartId] = useState(null);
 
-    const fetchCart = useCallback(async () => {
+    // Derived cart count directly from summary to prevent duplicate state and cascading renders
+    const cartCount = cartSummary?.total_items || 0;
+
+    const fetchCart = useCallback(async (isInitial = false) => {
         if (!token || user?.role !== 'konsumen') {
             setCartGroups([]);
-            setCartCount(0);
+            setCartSummary({ total_items: 0, subtotal: 0, total_berat_gram: 0, total_units: 0 });
             return;
         }
 
         try {
-            setLoading(true);
+            if (isInitial) setLoading(true);
             const res = await client.get('/cart');
             if (res.data.status === 'success') {
                 setCartGroups(res.data.data.groups || []);
-                setCartSummary(res.data.data.summary || {});
-                setCartCount(res.data.data.summary?.total_items || 0);
+                setCartSummary(res.data.data.summary || { total_items: 0, subtotal: 0, total_berat_gram: 0, total_units: 0 });
             }
         } catch (error) {
             console.error('Failed to fetch cart:', error);
         } finally {
-            setLoading(false);
+            if (isInitial) setLoading(false);
         }
     }, [token, user]);
 
     useEffect(() => {
-        fetchCart();
+        fetchCart(true);
     }, [fetchCart]);
 
     const addToCart = async (produk_id, jumlah = 1, catatan = '') => {
@@ -90,10 +92,11 @@ export const CartProvider = ({ children }) => {
     };
 
     const updateQty = async (cartId, jumlah) => {
+        setUpdatingCartId(cartId);
         try {
             const res = await client.put(`/cart/${cartId}`, { jumlah });
             if (res.data.status === 'success') {
-                await fetchCart();
+                await fetchCart(false);
                 return true;
             }
         } catch (error) {
@@ -104,14 +107,17 @@ export const CartProvider = ({ children }) => {
                 text: msg,
             });
             return false;
+        } finally {
+            setUpdatingCartId(null);
         }
     };
 
     const removeFromCart = async (cartId) => {
+        setUpdatingCartId(cartId);
         try {
             const res = await client.delete(`/cart/${cartId}`);
             if (res.data.status === 'success') {
-                await fetchCart();
+                await fetchCart(false);
                 return true;
             }
         } catch (error) {
@@ -122,6 +128,8 @@ export const CartProvider = ({ children }) => {
                 text: msg,
             });
             return false;
+        } finally {
+            setUpdatingCartId(null);
         }
     };
 
@@ -132,6 +140,7 @@ export const CartProvider = ({ children }) => {
                 cartCount,
                 cartSummary,
                 loading,
+                updatingCartId,
                 fetchCart,
                 addToCart,
                 updateQty,

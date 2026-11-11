@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useTheme } from '../context/ThemeContext';
-import { ShoppingCart, User, LogOut, LayoutDashboard, Package, History, Search, Sun, Moon, Sprout, ShieldCheck, MapPin } from 'lucide-react';
+import { ShoppingCart, User, LogOut, LayoutDashboard, Package, History, Search, Sun, Moon, Sprout, ShieldCheck, MapPin, BarChart3, Building2 } from 'lucide-react';
 
 const Navbar = () => {
     const { user, isStaffOrAdmin, logout } = useAuth();
@@ -28,15 +28,16 @@ const Navbar = () => {
                     <div>
                         <span className="d-inline-flex align-items-center gap-1">
                             <Sprout size={14} className="text-success" /> 
-                            Polinela Agro - Hasil Pertanian & Perkebunan Unggulan Politeknik Negeri Lampung
+                            {user?.role === 'pimpinan' 
+                                ? 'Portal Eksekutif Pimpinan Politeknik Negeri Lampung'
+                                : user?.role === 'superadmin'
+                                    ? 'Pusat Kontrol Super Administrator • Polinela Agro Digital'
+                                    : user?.role === 'admin_unit'
+                                        ? `Portal Pengelola Unit Usaha TEFA: ${user?.unit?.nama_unit || 'Polinela'}`
+                                        : 'Polinela Agro - Hasil Pertanian & Perkebunan Unggulan Politeknik Negeri Lampung'}
                         </span>
                     </div>
                     <div className="d-flex gap-3 align-items-center">
-                        {isStaffOrAdmin && (
-                            <Link to="/admin" className="text-white text-decoration-none fw-semibold d-inline-flex align-items-center gap-1">
-                                <ShieldCheck size={14} /> Portal Admin
-                            </Link>
-                        )}
                         <span className="d-inline-flex align-items-center gap-1">
                             <MapPin size={14} /> Bandar Lampung
                         </span>
@@ -48,13 +49,21 @@ const Navbar = () => {
             <nav className="navbar navbar-expand-lg py-2">
                 <div className="container">
                     {/* Brand Logo */}
-                    <Link to="/" className="navbar-brand d-flex align-items-center gap-2 text-decoration-none">
+                    <Link to={isStaffOrAdmin ? '/admin' : '/'} className="navbar-brand d-flex align-items-center gap-2 text-decoration-none">
                         <div className="rounded-3 p-2 d-flex align-items-center justify-content-center" style={{ width: '38px', height: '38px', background: 'var(--gradient-primary)' }}>
                             <Sprout size={22} className="text-white" />
                         </div>
                         <div>
                             <span className="fw-bold fs-5 d-block lh-1" style={{ color: 'var(--color-primary)' }}>POLINELA AGRO</span>
-                            <small style={{ fontSize: '11px', letterSpacing: '1px', color: 'var(--text-muted)' }}>MULTI-STORE PERKEBUNAN</small>
+                            <small style={{ fontSize: '11px', letterSpacing: '1px', color: 'var(--text-muted)' }}>
+                                {user?.role === 'pimpinan' 
+                                    ? 'PORTAL EKSEKUTIF PIMPINAN' 
+                                    : user?.role === 'superadmin' 
+                                        ? 'PORTAL SUPER ADMINISTRATOR' 
+                                        : user?.role === 'admin_unit' 
+                                            ? `PORTAL UNIT: ${user?.unit?.nama_unit || 'TOKO'}`.toUpperCase()
+                                            : 'MULTI-STORE PERKEBUNAN'}
+                            </small>
                         </div>
                     </Link>
 
@@ -69,40 +78,46 @@ const Navbar = () => {
                     </button>
 
                     <div className="collapse navbar-collapse" id="navbarMain">
-                        {/* Search Bar */}
-                        <form onSubmit={handleSearch} className="d-flex mx-lg-4 my-2 my-lg-0 flex-grow-1" style={{ maxWidth: '480px' }}>
-                            <div className="input-group">
-                                <input
-                                    type="text"
-                                    className="form-control rounded-start-pill border-end-0 ps-3"
-                                    placeholder="Cari kopi, kakao, bibit, sawit, pupuk..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                />
-                                <button className="btn btn-outline-success rounded-end-pill px-3" type="submit">
-                                    <Search size={18} />
-                                </button>
-                            </div>
-                        </form>
+                        {/* Search Bar - Hidden for all Staff & Admins */}
+                        {!isStaffOrAdmin && (
+                            <form onSubmit={handleSearch} className="d-flex mx-lg-4 my-2 my-lg-0 flex-grow-1" style={{ maxWidth: '480px' }}>
+                                <div className="input-group">
+                                    <input
+                                        type="text"
+                                        className="form-control rounded-start-pill border-end-0 ps-3"
+                                        placeholder="Cari kopi, kakao, bibit, sawit, pupuk..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                    />
+                                    <button className="btn btn-outline-success rounded-end-pill px-3" type="submit">
+                                        <Search size={18} />
+                                    </button>
+                                </div>
+                            </form>
+                        )}
 
-                        {/* Navigation Links */}
-                        <ul className="navbar-nav me-auto mb-2 mb-lg-0 gap-1">
-                            <li className="nav-item">
-                                <Link className={`nav-link nav-link-agro ${location.pathname === '/' ? 'active' : ''}`} to="/">
-                                    Beranda
-                                </Link>
-                            </li>
-                            <li className="nav-item">
-                                <Link className={`nav-link nav-link-agro ${location.pathname === '/katalog' && !location.search.includes('view=units') ? 'active' : ''}`} to="/katalog">
-                                    Semua Produk
-                                </Link>
-                            </li>
-                            <li className="nav-item">
-                                <Link className={`nav-link nav-link-agro ${location.search.includes('view=units') ? 'active' : ''}`} to="/katalog?view=units">
-                                    Unit Toko
-                                </Link>
-                            </li>
-                        </ul>
+                        {/* Navigation Links - Only for Konsumen / Public */}
+                        {!isStaffOrAdmin ? (
+                            <ul className="navbar-nav me-auto mb-2 mb-lg-0 gap-1">
+                                <li className="nav-item">
+                                    <Link className={`nav-link nav-link-agro ${location.pathname === '/' ? 'active' : ''}`} to="/">
+                                        Beranda
+                                    </Link>
+                                </li>
+                                <li className="nav-item">
+                                    <Link className={`nav-link nav-link-agro ${location.pathname === '/katalog' && !location.search.includes('view=units') ? 'active' : ''}`} to="/katalog">
+                                        Semua Produk
+                                    </Link>
+                                </li>
+                                <li className="nav-item">
+                                    <Link className={`nav-link nav-link-agro ${location.search.includes('view=units') ? 'active' : ''}`} to="/katalog?view=units">
+                                        Unit Toko
+                                    </Link>
+                                </li>
+                            </ul>
+                        ) : (
+                            <div className="me-auto"></div>
+                        )}
 
                         {/* Right side items */}
                         <div className="d-flex align-items-center gap-2">
@@ -115,16 +130,18 @@ const Navbar = () => {
                                 {isDark ? <Sun size={18} /> : <Moon size={18} />}
                             </button>
 
-                            {/* Shopping Cart Button */}
-                            <Link to="/keranjang" className="btn btn-light rounded-pill position-relative border px-3 d-flex align-items-center gap-2">
-                                <ShoppingCart size={19} style={{ color: 'var(--color-primary)' }} />
-                                <span className="d-none d-sm-inline small fw-semibold">Keranjang</span>
-                                {cartCount > 0 && (
-                                    <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                        {cartCount}
-                                    </span>
-                                )}
-                            </Link>
+                            {/* Shopping Cart Button - Hidden for all Staff & Admins */}
+                            {!isStaffOrAdmin && (
+                                <Link to="/keranjang" className="btn btn-light rounded-pill position-relative border px-3 d-flex align-items-center gap-2">
+                                    <ShoppingCart size={19} style={{ color: 'var(--color-primary)' }} />
+                                    <span className="d-none d-sm-inline small fw-semibold">Keranjang</span>
+                                    {cartCount > 0 && (
+                                        <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                            {cartCount}
+                                        </span>
+                                    )}
+                                </Link>
+                            )}
 
                             {/* User Menu */}
                             {user ? (
@@ -149,28 +166,69 @@ const Navbar = () => {
                                     </button>
                                     <ul className="dropdown-menu dropdown-menu-end shadow-sm border-0 py-2" aria-labelledby="userDropdown">
                                         <li className="px-3 py-1 small border-bottom mb-1" style={{ color: 'var(--text-muted)' }}>
-                                            Masuk sebagai <strong>{user.role}</strong>
+                                            Masuk sebagai: <strong>
+                                                {user.role === 'superadmin' 
+                                                    ? 'Super Administrator' 
+                                                    : user.role === 'admin_unit' 
+                                                        ? 'Admin Unit' 
+                                                        : user.role === 'pimpinan' 
+                                                            ? 'Pimpinan Polinela' 
+                                                            : 'Pelanggan'}
+                                            </strong>
                                             {user.unit && <div style={{ color: 'var(--color-primary)' }} className="fw-bold">{user.unit.nama_unit}</div>}
                                         </li>
                                         {isStaffOrAdmin && (
                                             <li>
-                                                <Link className="dropdown-item d-flex align-items-center gap-2 py-2" to="/admin">
-                                                    <LayoutDashboard size={16} className="text-primary" />
-                                                    <span>Dashboard Admin</span>
+                                                <Link 
+                                                    className={`dropdown-item d-flex align-items-center gap-2 py-2 ${
+                                                        user.role === 'pimpinan' 
+                                                            ? 'fw-bold text-success bg-success bg-opacity-10 rounded-2 my-1' 
+                                                            : user.role === 'superadmin'
+                                                                ? 'fw-bold text-danger bg-danger bg-opacity-10 rounded-2 my-1'
+                                                                : 'fw-bold text-primary bg-primary bg-opacity-10 rounded-2 my-1'
+                                                    }`} 
+                                                    to="/admin"
+                                                >
+                                                    {user.role === 'pimpinan' ? (
+                                                        <>
+                                                            <BarChart3 size={16} className="text-success" />
+                                                            <span>Dashboard Eksekutif Pimpinan</span>
+                                                        </>
+                                                    ) : user.role === 'superadmin' ? (
+                                                        <>
+                                                            <ShieldCheck size={16} className="text-danger" />
+                                                            <span>Panel Super Administrator</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Building2 size={16} className="text-primary" />
+                                                            <span>Panel Unit {user.unit?.nama_unit || 'Toko'}</span>
+                                                        </>
+                                                    )}
                                                 </Link>
                                             </li>
                                         )}
-                                        <li>
-                                            <Link className="dropdown-item d-flex align-items-center gap-2 py-2" to="/pesanan">
-                                                <History size={16} style={{ color: 'var(--color-primary)' }} />
-                                                <span>Riwayat Pesanan</span>
-                                            </Link>
-                                        </li>
+                                        {user.role !== 'pimpinan' && user.role !== 'superadmin' && (
+                                            <li>
+                                                <Link className="dropdown-item d-flex align-items-center gap-2 py-2" to="/pesanan">
+                                                    <History size={16} style={{ color: 'var(--color-primary)' }} />
+                                                    <span>Riwayat Pesanan</span>
+                                                </Link>
+                                            </li>
+                                        )}
 
                                         <li>
                                             <Link className="dropdown-item d-flex align-items-center gap-2 py-2" to="/profil">
                                                 <User size={16} style={{ color: 'var(--text-muted)' }} />
-                                                <span>Profil Saya</span>
+                                                <span>
+                                                    {user.role === 'pimpinan' 
+                                                        ? 'Pengaturan Akun & Sandi' 
+                                                        : user.role === 'superadmin' 
+                                                            ? 'Pengaturan Akun & Keamanan' 
+                                                            : user.role === 'admin_unit' 
+                                                                ? 'Pengaturan Akun Unit' 
+                                                                : 'Pengaturan Akun & Alamat'}
+                                                </span>
                                             </Link>
                                         </li>
                                         <li><hr className="dropdown-divider" /></li>

@@ -29,8 +29,10 @@ class DashboardController extends Controller
             $paymentQuery->whereHas('order', fn($q) => $q->where('unit_id', $unitId));
         }
 
-        $totalPendapatan = (clone $orderQuery)->whereIn('status', ['selesai', 'diproses', 'dikirim'])->sum('grand_total');
-        $totalPesanan = (clone $orderQuery)->count();
+        $validStatus = ['selesai', 'diproses', 'dikirim'];
+        $totalPendapatan = (clone $orderQuery)->whereIn('status', $validStatus)->sum('grand_total');
+        $totalPesanan = (clone $orderQuery)->whereIn('status', $validStatus)->count();
+        $totalSemuaPesanan = (clone $orderQuery)->count();
         $pesananPerluVerifikasi = (clone $orderQuery)->whereIn('status', ['menunggu_verifikasi', 'pending'])->count();
         $pesananSelesai = (clone $orderQuery)->where('status', 'selesai')->count();
         $totalProduk = (clone $productQuery)->whereNull('deleted_at')->count();
@@ -54,11 +56,12 @@ class DashboardController extends Controller
         $sparklineOrders = [];
         for ($i = 6; $i >= 0; $i--) {
             $dayDate = now()->subDays($i);
-            $dayRev = Order::whereIn('status', ['selesai', 'diproses', 'dikirim'])
+            $dayRev = Order::whereIn('status', $validStatus)
                 ->whereDate('created_at', $dayDate->toDateString())
                 ->when($role === 'admin_unit' && $unitId, fn($q) => $q->where('unit_id', $unitId))
                 ->sum('grand_total');
-            $dayOrd = Order::whereDate('created_at', $dayDate->toDateString())
+            $dayOrd = Order::whereIn('status', $validStatus)
+                ->whereDate('created_at', $dayDate->toDateString())
                 ->when($role === 'admin_unit' && $unitId, fn($q) => $q->where('unit_id', $unitId))
                 ->count();
             
@@ -71,11 +74,11 @@ class DashboardController extends Controller
         for ($i = 6; $i >= 0; $i--) {
             $dayDate = now()->subDays($i);
             $dayLabel = $dayDate->translatedFormat('d M');
-            $dayRev = Order::whereIn('status', ['selesai', 'diproses', 'dikirim'])
+            $dayRev = Order::whereIn('status', $validStatus)
                 ->whereDate('created_at', $dayDate->toDateString())
                 ->when($role === 'admin_unit' && $unitId, fn($q) => $q->where('unit_id', $unitId))
                 ->sum('grand_total');
-            $daySalesCount = Order::whereIn('status', ['selesai', 'diproses', 'dikirim'])
+            $daySalesCount = Order::whereIn('status', $validStatus)
                 ->whereDate('created_at', $dayDate->toDateString())
                 ->when($role === 'admin_unit' && $unitId, fn($q) => $q->where('unit_id', $unitId))
                 ->count();
@@ -168,36 +171,18 @@ class DashboardController extends Controller
                 ];
             });
 
-        // Fallback default sample reviews if database has few
-        if ($recentReviews->isEmpty()) {
-            $recentReviews = collect([
-                [
-                    'id' => 1,
-                    'user_name' => 'Kevin S.',
-                    'product_name' => 'Kopi Robusta Polinela',
-                    'rating' => 5,
-                    'comment' => 'Aroma kopinya khas banget, roasting pas, pengiriman cepat & packaging aman!',
-                    'created_at' => '5 menit yang lalu',
-                ],
-                [
-                    'id' => 2,
-                    'user_name' => 'Rina T.',
-                    'product_name' => 'Cokelat Bubuk Fermentasi TEFA',
-                    'rating' => 5,
-                    'comment' => 'Rasa cokelat premium khas riset kampus, mantap untuk minuman hangat sore hari.',
-                    'created_at' => '1 jam yang lalu',
-                ]
-            ]);
-        }
+
 
         // Performa per Unit TEFA (Kopi, Kakao, Lada, Atsiri)
         $unitStats = Unit::withCount(['products' => fn($q) => $q->whereNull('deleted_at')])
             ->get()
-            ->map(function ($u) {
+            ->map(function ($u) use ($validStatus) {
                 $omset = Order::where('unit_id', $u->id)
-                    ->whereIn('status', ['selesai', 'diproses', 'dikirim'])
+                    ->whereIn('status', $validStatus)
                     ->sum('grand_total');
-                $totalOrders = Order::where('unit_id', $u->id)->count();
+                $totalOrders = Order::where('unit_id', $u->id)
+                    ->whereIn('status', $validStatus)
+                    ->count();
 
                 return [
                     'id'            => $u->id,
@@ -209,15 +194,42 @@ class DashboardController extends Controller
                 ];
             });
 
+        // Hitung persentase pertumbuhan riil dibanding bulan sebelumnya
+        $prevMonthRev = (float) Order::whereIn('status', $validStatus)
+            ->whereYear('created_at', now()->subMonth()->year)
+            ->whereMonth('created_at', now()->subMonth()->month)
+            ->when($role === 'admin_unit' && $unitId, fn($q) => $q->where('unit_id', $unitId))
+            ->sum('grand_total');
+        $growthRevCalc = $prevMonthRev > 0 
+            ? round((($currentMonthRev - $prevMonthRev) / $prevMonthRev) * 100) 
+            : ($currentMonthRev > 0 ? 100 : 0);
+        $growthRevenue = ($growthRevCalc >= 0 ? '+' : '') . "{$growthRevCalc}%";
+
+        $prevMonthOrders = Order::whereIn('status', $validStatus)
+            ->whereYear('created_at', now()->subMonth()->year)
+            ->whereMonth('created_at', now()->subMonth()->month)
+            ->when($role === 'admin_unit' && $unitId, fn($q) => $q->where('unit_id', $unitId))
+            ->count();
+        $currMonthOrders = Order::whereIn('status', $validStatus)
+            ->whereYear('created_at', now()->year)
+            ->whereMonth('created_at', now()->month)
+            ->when($role === 'admin_unit' && $unitId, fn($q) => $q->where('unit_id', $unitId))
+            ->count();
+        $growthOrdersCalc = $prevMonthOrders > 0 
+            ? round((($currMonthOrders - $prevMonthOrders) / $prevMonthOrders) * 100) 
+            : ($currMonthOrders > 0 ? 100 : 0);
+        $growthOrders = ($growthOrdersCalc >= 0 ? '+' : '') . "{$growthOrdersCalc}%";
+
         $stats = [
             'total_pendapatan'          => (float) $totalPendapatan,
             'total_pesanan'             => $totalPesanan,
+            'total_semua_pesanan'       => $totalSemuaPesanan,
             'pesanan_perlu_verifikasi'  => $pesananPerluVerifikasi,
             'pesanan_selesai'           => $pesananSelesai,
             'pesanan_pending'           => $pesananPerluVerifikasi,
             'total_produk'              => $totalProduk,
-            'growth_revenue'            => '+12%',
-            'growth_orders'             => '+8%',
+            'growth_revenue'            => $growthRevenue,
+            'growth_orders'             => $growthOrders,
         ];
 
         return response()->json([

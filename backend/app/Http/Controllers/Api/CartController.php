@@ -49,31 +49,50 @@ class CartController extends Controller
                 ];
             }
 
+            $isOutOfStock = ($product->stok <= 0 || $product->status !== 'aktif');
+            $isOverStock = ($qty > $product->stok);
+
             $grouped[$unitId]['unit_subtotal'] += $subtotal;
             $grouped[$unitId]['items'][] = [
-                'id'           => $item->id,
-                'product_id'   => $product->id,
-                'produk_id'    => $product->id,
-                'product'      => $product,
-                'nama_produk'  => $product->nama_produk,
-                'slug'         => $product->slug,
-                'harga'        => $product->harga,
-                'satuan'       => $product->satuan,
-                'berat_gram'   => $product->berat_gram,
-                'gambar_utama' => $product->gambar_utama,
-                'stok'         => $product->stok,
-                'qty'          => $qty,
-                'jumlah'       => $qty,
-                'subtotal'     => $subtotal,
+                'id'              => $item->id,
+                'product_id'      => $product->id,
+                'produk_id'       => $product->id,
+                'product'         => $product,
+                'nama_produk'     => $product->nama_produk,
+                'slug'            => $product->slug,
+                'harga'           => $product->harga,
+                'satuan'          => $product->satuan,
+                'berat_gram'      => $product->berat_gram,
+                'gambar_utama'    => $product->gambar_utama,
+                'stok'            => $product->stok,
+                'stok_tersedia'   => $product->stok,
+                'is_out_of_stock' => $isOutOfStock,
+                'is_over_stock'   => $isOverStock,
+                'qty'             => $qty,
+                'jumlah'          => $qty,
+                'subtotal'        => $subtotal,
             ];
         }
 
+        // Hitung apakah ada isu stok di keranjang
+        $hasStockIssue = false;
+        foreach ($grouped as $g) {
+            foreach ($g['items'] as $it) {
+                if ($it['is_out_of_stock'] || $it['is_over_stock']) {
+                    $hasStockIssue = true;
+                    break 2;
+                }
+            }
+        }
+
         $summary = [
-            'total_items'      => $totalItems,
-            'subtotal'         => $totalBelanja,
-            'total_belanja'    => $totalBelanja,
-            'total_berat_gram' => $totalBerat,
-            'total_units'      => count($grouped),
+            'total_items'       => $totalItems,
+            'subtotal'          => $totalBelanja,
+            'total_belanja'     => $totalBelanja,
+            'total_berat_gram'  => $totalBerat,
+            'total_units'       => count($grouped),
+            'has_stock_issue'   => $hasStockIssue,
+            'can_checkout'      => !$hasStockIssue && $totalItems > 0,
         ];
 
         return response()->json([
@@ -94,11 +113,23 @@ class CartController extends Controller
 
     public function add(Request $request)
     {
+        $request->validate([
+            'qty'    => 'nullable|integer|min:1',
+            'jumlah' => 'nullable|integer|min:1',
+        ], [
+            'qty.min'    => 'Jumlah pembelian minimal 1 unit.',
+            'jumlah.min' => 'Jumlah pembelian minimal 1 unit.',
+        ]);
+
         $productId = $request->get('product_id') ?? $request->get('produk_id');
-        $qty = (int) ($request->get('qty') ?? $request->get('jumlah') ?? 1);
+        $qty = max(1, (int) ($request->get('qty') ?? $request->get('jumlah') ?? 1));
 
         if (!$productId) {
             return response()->json(['status' => 'error', 'success' => false, 'message' => 'Produk ID harus diisi.'], 422);
+        }
+
+        if ($qty < 1) {
+            return response()->json(['status' => 'error', 'success' => false, 'message' => 'Jumlah pembelian minimal 1 unit.'], 422);
         }
 
         $userId = $request->user()->id;
@@ -148,6 +179,14 @@ class CartController extends Controller
 
     public function updateQty(Request $request, $id = null)
     {
+        $request->validate([
+            'qty'    => 'nullable|integer|min:1',
+            'jumlah' => 'nullable|integer|min:1',
+        ], [
+            'qty.min'    => 'Jumlah produk minimal 1 unit.',
+            'jumlah.min' => 'Jumlah produk minimal 1 unit.',
+        ]);
+
         $cartId = $id ?? $request->get('cart_id') ?? $request->get('id');
         $qty = (int) ($request->get('qty') ?? $request->get('jumlah') ?? 1);
 
@@ -156,6 +195,14 @@ class CartController extends Controller
 
         if (!$cart) {
             return response()->json(['status' => 'error', 'success' => false, 'message' => 'Item keranjang tidak ditemukan.'], 404);
+        }
+
+        if ($qty < 1) {
+            return response()->json([
+                'status'  => 'error',
+                'success' => false,
+                'message' => 'Jumlah produk minimal 1 unit. Jika ingin menghapus produk, silakan gunakan tombol hapus.',
+            ], 422);
         }
 
         if ($qty > $cart->product->stok) {

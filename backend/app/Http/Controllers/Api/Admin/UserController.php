@@ -32,7 +32,7 @@ class UserController extends Controller
             });
         }
 
-        $users = $query->orderBy('id', 'desc')->paginate($request->get('per_page', 15));
+        $users = $query->orderBy('id', 'desc')->paginate($request->get('per_page', 15))->withQueryString();
 
         return response()->json([
             'status'  => 'success',

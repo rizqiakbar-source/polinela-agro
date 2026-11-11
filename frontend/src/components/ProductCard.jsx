@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ShoppingCart, Star, Store } from 'lucide-react';
 import { formatRupiah, getImageUrl } from '../utils/format';
@@ -6,17 +6,28 @@ import { useCart } from '../context/CartContext';
 
 const ProductCard = ({ product }) => {
     const { addToCart } = useCart();
+    const [isAdding, setIsAdding] = useState(false);
 
     const imageSrc = product.gambar_utama 
         ? getImageUrl(product.gambar_utama) 
         : (product.images && product.images.length > 0 ? getImageUrl(product.images[0].gambar) : 'https://placehold.co/400x300?text=Polinela+Agro');
 
-    const totalStock = product.total_stok ?? (product.stocks?.reduce((acc, s) => acc + (s.jumlah_stok - s.stok_tersedia), 0) || 10);
+    const totalStock = product.total_stok ?? product.stok ?? 0;
     const isOutOfStock = totalStock <= 0;
+    const hasRating = product.rating_avg && Number(product.rating_avg) > 0;
+
+    const handleAdd = async () => {
+        if (isAdding || isOutOfStock) return;
+        setIsAdding(true);
+        try {
+            await addToCart(product.id, 1);
+        } finally {
+            setIsAdding(false);
+        }
+    };
 
     return (
         <div className="card h-100 border-0 shadow-sm rounded-4 overflow-hidden product-card transition-all" style={{ transition: 'transform 0.2s, box-shadow 0.2s' }}>
-            {/* Image Header with Store Badge */}
             <div className="position-relative overflow-hidden product-card-img-wrapper" style={{ height: '200px' }}>
                 <Link to={`/produk/${product.id || product.slug}`}>
                     <img
@@ -30,18 +41,16 @@ const ProductCard = ({ product }) => {
                     />
                 </Link>
 
-                {/* Unit Toko Badge */}
                 {product.unit && (
                     <span 
                         className="position-absolute top-0 start-0 m-2 badge bg-success shadow-sm rounded-pill px-2 py-1 small d-inline-flex align-items-center"
-                        style={{ fontSize: '11px', backdropFilter: 'blur(6px)' }}
+                        style={{ fontSize: '11px' }}
                     >
                         <Store size={12} className="me-1" />
                         {product.unit.nama_unit}
                     </span>
                 )}
 
-                {/* Category Badge */}
                 {product.category && (
                     <span className="position-absolute top-0 end-0 m-2 badge badge-category shadow-sm rounded-pill px-2 py-1 small" style={{ fontSize: '10px' }}>
                         {product.category.nama_kategori}
@@ -49,7 +58,6 @@ const ProductCard = ({ product }) => {
                 )}
             </div>
 
-            {/* Card Body */}
             <div className="card-body p-3 d-flex flex-column">
                 <Link to={`/produk/${product.id || product.slug}`} className="text-decoration-none product-title-link mb-1">
                     <h6 className="card-title fw-semibold text-truncate-2 mb-1" style={{ fontSize: '14px', minHeight: '40px', lineHeight: '1.4' }}>
@@ -58,11 +66,17 @@ const ProductCard = ({ product }) => {
                 </Link>
 
                 <div className="d-flex align-items-center gap-1 mb-2">
-                    <Star size={14} className="text-warning fill-warning" style={{ fill: '#ffc107' }} />
-                    <span className="small fw-semibold text-muted">
-                        {product.rating_avg ? Number(product.rating_avg).toFixed(1) : '5.0'}
-                    </span>
-                    <span className="small text-muted">({product.reviews_count || 0} ulasan)</span>
+                    {hasRating ? (
+                        <>
+                            <Star size={14} className="text-warning fill-warning" style={{ fill: '#ffc107' }} />
+                            <span className="small fw-semibold text-muted">
+                                {Number(product.rating_avg).toFixed(1)}
+                            </span>
+                            <span className="small text-muted">({product.reviews_count || 0} ulasan)</span>
+                        </>
+                    ) : (
+                        <span className="small text-muted">Belum ada ulasan</span>
+                    )}
                 </div>
 
                 <div className="mt-auto pt-2 border-top d-flex align-items-center justify-content-between">
@@ -77,10 +91,14 @@ const ProductCard = ({ product }) => {
                         className="btn btn-sm btn-outline-success rounded-circle p-2 d-flex align-items-center justify-content-center"
                         style={{ width: '36px', height: '36px' }}
                         title="Tambah ke Keranjang"
-                        disabled={isOutOfStock}
-                        onClick={() => addToCart(product.id, 1)}
+                        disabled={isOutOfStock || isAdding}
+                        onClick={handleAdd}
                     >
-                        <ShoppingCart size={16} />
+                        {isAdding ? (
+                            <span className="spinner-border spinner-border-sm" style={{ width: '14px', height: '14px' }} role="status"></span>
+                        ) : (
+                            <ShoppingCart size={16} />
+                        )}
                     </button>
                 </div>
             </div>

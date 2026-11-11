@@ -69,7 +69,7 @@ const Footer = () => {
                 <hr className="border-secondary opacity-25" />
                 <div className="d-flex flex-column flex-md-row justify-content-between align-items-center small text-secondary">
                     <p className="mb-2 mb-md-0">&copy; {new Date().getFullYear()} Polinela Agro. Politeknik Negeri Lampung. All rights reserved.</p>
-                    <p className="mb-0">Powered by React Vite & Laravel REST API</p>
+                    <p className="mb-0">Teaching Factory Perkebunan Terpadu</p>
                 </div>
             </div>
         </footer>

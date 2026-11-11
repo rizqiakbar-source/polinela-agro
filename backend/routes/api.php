@@ -22,11 +22,17 @@ use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
 | Public Routes
 |--------------------------------------------------------------------------
 */
-// Auth Public
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/auth/login', [AuthController::class, 'login']);
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/auth/register', [AuthController::class, 'register']);
+// Auth Public (Protected with Rate Limiting 10 req/min)
+Route::middleware('throttle:10,1')->group(function () {
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/auth/login', [AuthController::class, 'login']);
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/auth/register', [AuthController::class, 'register']);
+    Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
+    Route::post('/auth/verify-otp', [AuthController::class, 'verifyOtp']);
+    Route::post('/resend-otp', [AuthController::class, 'resendOtp']);
+    Route::post('/auth/resend-otp', [AuthController::class, 'resendOtp']);
+});
 
 // Products & Units Public
 Route::get('/products', [ProductController::class, 'index']);
@@ -46,35 +52,35 @@ Route::get('/settings/public', [BannerController::class, 'settings']);
 */
 Route::middleware('auth:sanctum')->group(function () {
     // Auth Profile
-    Route::get('/me', [AuthController::class, 'me']);
     Route::get('/auth/me', [AuthController::class, 'me']);
-    Route::put('/profile', [AuthController::class, 'updateProfile']);
-    Route::post('/profile', [AuthController::class, 'updateProfile']);
-    Route::put('/auth/profile', [AuthController::class, 'updateProfile']);
-    Route::post('/auth/profile', [AuthController::class, 'updateProfile']);
-    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/me', [AuthController::class, 'me']);
+    Route::match(['put', 'post'], '/auth/profile', [AuthController::class, 'updateProfile']);
+    Route::match(['put', 'post'], '/profile', [AuthController::class, 'updateProfile']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
+    Route::post('/logout', [AuthController::class, 'logout']);
 
     // Keranjang Belanja
     Route::get('/cart', [CartController::class, 'index']);
     Route::post('/cart', [CartController::class, 'add']);
     Route::post('/cart/add', [CartController::class, 'add']);
-    Route::put('/cart/update', [CartController::class, 'updateQty']);
-    Route::put('/cart/{id}', [CartController::class, 'updateQty']);
+    Route::match(['put', 'post'], '/cart/update', [CartController::class, 'updateQty']);
+    Route::match(['put', 'post'], '/cart/{id}', [CartController::class, 'updateQty']);
     Route::delete('/cart/{id}', [CartController::class, 'remove']);
     Route::get('/cart/count', [CartController::class, 'count']);
 
-    // Checkout & Voucher
-    Route::post('/checkout', [CheckoutController::class, 'process']);
-    Route::post('/checkout/process', [CheckoutController::class, 'process']);
+    // Checkout & Voucher (Throttle 15 req/min)
+    Route::middleware('throttle:15,1')->group(function () {
+        Route::post('/checkout', [CheckoutController::class, 'process']);
+        Route::post('/checkout/process', [CheckoutController::class, 'process']);
+    });
     Route::post('/checkout/voucher', [CheckoutController::class, 'validateVoucher']);
     Route::post('/checkout/validate-voucher', [CheckoutController::class, 'validateVoucher']);
 
     // Pesanan Konsumen
     Route::get('/orders', [OrderController::class, 'index']);
     Route::get('/orders/{orderNumber}', [OrderController::class, 'show']);
-    Route::post('/orders/upload-bukti', [OrderController::class, 'uploadBukti']);
     Route::post('/orders/{id}/upload-bukti', [OrderController::class, 'uploadBukti']);
+    Route::post('/orders/upload-bukti', [OrderController::class, 'uploadBukti']);
     Route::match(['put', 'post'], '/orders/{id}/terima', [OrderController::class, 'konfirmasiTerima']);
     Route::match(['put', 'post'], '/orders/{id}/konfirmasi-terima', [OrderController::class, 'konfirmasiTerima']);
     Route::match(['put', 'post'], '/orders/{id}/batal', [OrderController::class, 'batalkan']);
@@ -98,7 +104,7 @@ Route::post('/payment/midtrans/callback', [PaymentController::class, 'handleCall
 | Admin & Pimpinan Protected Routes (Sanctum)
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
+Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
     // Dashboard Stats
     Route::get('/dashboard', [AdminDashboardController::class, 'index']);
 
@@ -115,6 +121,14 @@ Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
     Route::get('/orders/{id}', [AdminOrderController::class, 'show']);
     Route::put('/orders/{id}/status', [AdminOrderController::class, 'updateStatus']);
     Route::put('/orders/{id}/resi', [AdminOrderController::class, 'updateStatus']);
+    Route::post('/orders/cleanup-expired', function () {
+        $count = \App\Services\StockService::cancelExpiredOrders(24);
+        return response()->json([
+            'status'          => 'success',
+            'message'         => "Berhasil membatalkan {$count} pesanan kedaluwarsa & mengembalikan stoknya.",
+            'cancelled_count' => $count,
+        ]);
+    });
 
     // Verifikasi Pembayaran
     Route::get('/payments', [AdminPaymentController::class, 'index']);
@@ -127,53 +141,57 @@ Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
     Route::get('/reports', [AdminReportController::class, 'index']);
     Route::get('/reports/sales', [AdminReportController::class, 'index']);
 
-    // Manajemen Pengguna (Superadmin)
-    Route::get('/users', [AdminUserController::class, 'index']);
-    Route::post('/users', [AdminUserController::class, 'store']);
-    Route::put('/users/{id}', [AdminUserController::class, 'update']);
-    Route::delete('/users/{id}', [AdminUserController::class, 'destroy']);
+    // Manajemen Master & Pengaturan (Khusus Superadmin)
+    Route::middleware('admin:superadmin')->group(function () {
+        Route::get('/users', [AdminUserController::class, 'index']);
+        Route::post('/users', [AdminUserController::class, 'store']);
+        Route::put('/users/{id}', [AdminUserController::class, 'update']);
+        Route::delete('/users/{id}', [AdminUserController::class, 'destroy']);
 
-    // Unit Usaha TEFA
+        // Pengaturan Sistem
+        Route::get('/settings', [\App\Http\Controllers\Api\Admin\SettingController::class, 'index']);
+        Route::post('/settings', [\App\Http\Controllers\Api\Admin\SettingController::class, 'update']);
+
+        // Tarif Ongkir & Kurir
+        Route::get('/ongkir', [\App\Http\Controllers\Api\Admin\OngkirController::class, 'index']);
+        Route::post('/ongkir', [\App\Http\Controllers\Api\Admin\OngkirController::class, 'store']);
+
+        // Backup Database
+        Route::get('/backup', [\App\Http\Controllers\Api\Admin\BackupController::class, 'index']);
+        Route::post('/backup/create', [\App\Http\Controllers\Api\Admin\BackupController::class, 'create']);
+
+        // Audit Log Aktivitas
+        Route::get('/logs', [\App\Http\Controllers\Api\Admin\LogController::class, 'index']);
+
+        // Mutasi Master Unit Usaha TEFA
+        Route::post('/units', [\App\Http\Controllers\Api\Admin\UnitController::class, 'store']);
+        Route::put('/units/{id}', [\App\Http\Controllers\Api\Admin\UnitController::class, 'update']);
+        Route::delete('/units/{id}', [\App\Http\Controllers\Api\Admin\UnitController::class, 'destroy']);
+
+        // Mutasi Kategori Produk
+        Route::post('/categories', [\App\Http\Controllers\Api\Admin\CategoryController::class, 'store']);
+        Route::put('/categories/{id}', [\App\Http\Controllers\Api\Admin\CategoryController::class, 'update']);
+        Route::delete('/categories/{id}', [\App\Http\Controllers\Api\Admin\CategoryController::class, 'destroy']);
+
+        // Mutasi Voucher & Diskon
+        Route::post('/vouchers', [\App\Http\Controllers\Api\Admin\VoucherController::class, 'store']);
+        Route::put('/vouchers/{id}', [\App\Http\Controllers\Api\Admin\VoucherController::class, 'update']);
+        Route::delete('/vouchers/{id}', [\App\Http\Controllers\Api\Admin\VoucherController::class, 'destroy']);
+
+        // Mutasi Banner Promosi
+        Route::post('/banners', [\App\Http\Controllers\Api\Admin\BannerController::class, 'store']);
+        Route::put('/banners/{id}', [\App\Http\Controllers\Api\Admin\BannerController::class, 'update']);
+        Route::delete('/banners/{id}', [\App\Http\Controllers\Api\Admin\BannerController::class, 'destroy']);
+    });
+
+    // Read-Only Master Data untuk Seluruh Admin & Pimpinan
     Route::get('/units', [\App\Http\Controllers\Api\Admin\UnitController::class, 'index']);
-    Route::post('/units', [\App\Http\Controllers\Api\Admin\UnitController::class, 'store']);
-    Route::put('/units/{id}', [\App\Http\Controllers\Api\Admin\UnitController::class, 'update']);
-    Route::delete('/units/{id}', [\App\Http\Controllers\Api\Admin\UnitController::class, 'destroy']);
-
-    // Kategori Produk
     Route::get('/categories', [\App\Http\Controllers\Api\Admin\CategoryController::class, 'index']);
-    Route::post('/categories', [\App\Http\Controllers\Api\Admin\CategoryController::class, 'store']);
-    Route::put('/categories/{id}', [\App\Http\Controllers\Api\Admin\CategoryController::class, 'update']);
-    Route::delete('/categories/{id}', [\App\Http\Controllers\Api\Admin\CategoryController::class, 'destroy']);
-
-    // Voucher & Diskon
     Route::get('/vouchers', [\App\Http\Controllers\Api\Admin\VoucherController::class, 'index']);
-    Route::post('/vouchers', [\App\Http\Controllers\Api\Admin\VoucherController::class, 'store']);
-    Route::put('/vouchers/{id}', [\App\Http\Controllers\Api\Admin\VoucherController::class, 'update']);
-    Route::delete('/vouchers/{id}', [\App\Http\Controllers\Api\Admin\VoucherController::class, 'destroy']);
-
-    // Banner Promosi
     Route::get('/banners', [\App\Http\Controllers\Api\Admin\BannerController::class, 'index']);
-    Route::post('/banners', [\App\Http\Controllers\Api\Admin\BannerController::class, 'store']);
-    Route::put('/banners/{id}', [\App\Http\Controllers\Api\Admin\BannerController::class, 'update']);
-    Route::delete('/banners/{id}', [\App\Http\Controllers\Api\Admin\BannerController::class, 'destroy']);
 
     // Ulasan Produk
     Route::get('/reviews', [\App\Http\Controllers\Api\Admin\ReviewController::class, 'index']);
     Route::delete('/reviews/{id}', [\App\Http\Controllers\Api\Admin\ReviewController::class, 'destroy']);
-
-    // Pengaturan Sistem
-    Route::get('/settings', [\App\Http\Controllers\Api\Admin\SettingController::class, 'index']);
-    Route::post('/settings', [\App\Http\Controllers\Api\Admin\SettingController::class, 'update']);
-
-    // Tarif Ongkir & Kurir
-    Route::get('/ongkir', [\App\Http\Controllers\Api\Admin\OngkirController::class, 'index']);
-    Route::post('/ongkir', [\App\Http\Controllers\Api\Admin\OngkirController::class, 'store']);
-
-    // Backup Database
-    Route::get('/backup', [\App\Http\Controllers\Api\Admin\BackupController::class, 'index']);
-    Route::post('/backup/create', [\App\Http\Controllers\Api\Admin\BackupController::class, 'create']);
-
-    // Audit Log Aktivitas
-    Route::get('/logs', [\App\Http\Controllers\Api\Admin\LogController::class, 'index']);
 });
 

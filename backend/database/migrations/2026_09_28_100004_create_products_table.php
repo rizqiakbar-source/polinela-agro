@@ -21,7 +21,7 @@ return new class extends Migration
             $table->decimal('harga', 12, 2)->default(0);
             $table->integer('berat_gram')->default(500);
             $table->string('satuan', 50)->default('pack');
-            $table->integer('stok')->default(0);
+            $table->unsignedInteger('stok')->default(0);
             $table->integer('stok_min')->default(5);
             $table->string('gambar_utama', 255)->nullable();
             $table->enum('status', ['aktif', 'nonaktif'])->default('aktif');

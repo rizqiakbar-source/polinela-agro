@@ -17,6 +17,7 @@ const DetailProduk = () => {
     const [quantity, setQuantity] = useState(1);
     const [notes, setNotes] = useState('');
     const [loading, setLoading] = useState(true);
+    const [isAdding, setIsAdding] = useState(false);
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -69,6 +70,7 @@ const DetailProduk = () => {
     const isOutOfStock = totalStock <= 0;
 
     const handleAddToCart = async () => {
+        if (isAdding) return;
         if (quantity > totalStock) {
             Swal.fire({
                 icon: 'warning',
@@ -77,7 +79,12 @@ const DetailProduk = () => {
             });
             return;
         }
-        await addToCart(product.id, quantity, notes);
+        setIsAdding(true);
+        try {
+            await addToCart(product.id, quantity, notes);
+        } finally {
+            setIsAdding(false);
+        }
     };
 
     return (
@@ -143,14 +150,19 @@ const DetailProduk = () => {
 
                             <h3 className="fw-bold text-dark mb-2">{product.nama_produk}</h3>
 
-                            {/* Rating and Reviews */}
                             <div className="d-flex align-items-center gap-2 mb-3">
-                                <div className="d-flex align-items-center text-warning">
-                                    <Star size={16} fill="#ffc107" />
-                                    <span className="ms-1 fw-bold text-dark small">{product.rating_avg ? Number(product.rating_avg).toFixed(1) : '5.0'}</span>
-                                </div>
-                                <span className="text-muted small">•</span>
-                                <span className="text-muted small">{product.reviews?.length || 0} Penilaian</span>
+                                {product.rating_avg && Number(product.rating_avg) > 0 ? (
+                                    <>
+                                        <div className="d-flex align-items-center text-warning">
+                                            <Star size={16} fill="#ffc107" />
+                                            <span className="ms-1 fw-bold text-dark small">{Number(product.rating_avg).toFixed(1)}</span>
+                                        </div>
+                                        <span className="text-muted small">•</span>
+                                        <span className="text-muted small">{product.reviews?.length || 0} Penilaian</span>
+                                    </>
+                                ) : (
+                                    <span className="text-muted small">Belum ada penilaian</span>
+                                )}
                                 <span className="text-muted small">•</span>
                                 <span className={`badge ${totalStock > 0 ? 'bg-success' : 'bg-danger'}`}>
                                     {totalStock > 0 ? `Tersedia: ${totalStock} ${product.satuan || 'Pcs'}` : 'Stok Habis'}
@@ -203,11 +215,20 @@ const DetailProduk = () => {
                             <div className="d-flex gap-3 mb-4">
                                 <button
                                     className="btn btn-success btn-lg rounded-pill px-4 flex-grow-1 d-flex align-items-center justify-content-center gap-2 shadow-sm"
-                                    disabled={isOutOfStock}
+                                    disabled={isOutOfStock || isAdding}
                                     onClick={handleAddToCart}
                                 >
-                                    <ShoppingCart size={20} />
-                                    <span>{isOutOfStock ? 'Stok Habis' : 'Tambah ke Keranjang'}</span>
+                                    {isAdding ? (
+                                        <>
+                                            <span className="spinner-border spinner-border-sm" role="status"></span>
+                                            <span>Menambahkan...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <ShoppingCart size={20} />
+                                            <span>{isOutOfStock ? 'Stok Habis' : 'Tambah ke Keranjang'}</span>
+                                        </>
+                                    )}
                                 </button>
                             </div>
 

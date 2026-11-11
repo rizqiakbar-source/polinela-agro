@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import client from '../api/client';
 import ProductCard from '../components/ProductCard';
-import { Search, Filter, X, ArrowUpDown, Store } from 'lucide-react';
+import { Search, Filter, X, Store } from 'lucide-react';
 
 const Katalog = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -18,6 +18,23 @@ const Katalog = () => {
     const searchQuery = searchParams.get('q') || '';
     const selectedSort = searchParams.get('sort') || 'terbaru';
     const currentPage = parseInt(searchParams.get('page') || '1', 10);
+
+    const [searchInput, setSearchInput] = useState(searchQuery);
+
+    // Sync input if external URL change happens
+    useEffect(() => {
+        setSearchInput(searchQuery);
+    }, [searchQuery]);
+
+    // Debounce search input to prevent API storm on every keystroke
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            if (searchInput !== searchQuery) {
+                updateFilter('q', searchInput);
+            }
+        }, 400);
+        return () => clearTimeout(handler);
+    }, [searchInput]);
 
     // Fetch filters once
     useEffect(() => {
@@ -41,14 +58,15 @@ const Katalog = () => {
         const fetchProducts = async () => {
             setLoading(true);
             try {
-                const params = new URLSearchParams();
-                if (selectedUnit) params.append('unit_id', selectedUnit);
-                if (selectedCategory) params.append('category_id', selectedCategory);
-                if (searchQuery) params.append('search', searchQuery);
-                if (selectedSort) params.append('sort', selectedSort);
-                params.append('page', currentPage);
-
-                const res = await client.get(`/products?${params.toString()}`);
+                const res = await client.get('/products', {
+                    params: {
+                        unit_id: selectedUnit || undefined,
+                        category_id: selectedCategory || undefined,
+                        search: searchQuery || undefined,
+                        sort: selectedSort,
+                        page: currentPage,
+                    },
+                });
                 if (res.data.status === 'success' || res.data.success) {
                     const pData = res.data.data;
                     const items = Array.isArray(pData) ? pData : (pData?.data || []);
@@ -118,11 +136,11 @@ const Katalog = () => {
                                         type="text"
                                         className="form-control"
                                         placeholder="Cari nama produk..."
-                                        value={searchQuery}
-                                        onChange={(e) => updateFilter('q', e.target.value)}
+                                        value={searchInput}
+                                        onChange={(e) => setSearchInput(e.target.value)}
                                     />
-                                    {searchQuery && (
-                                        <button className="btn btn-outline-secondary" onClick={() => updateFilter('q', '')}>
+                                    {searchInput && (
+                                        <button className="btn btn-outline-secondary" onClick={() => { setSearchInput(''); updateFilter('q', ''); }}>
                                             <X size={14} />
                                         </button>
                                     )}

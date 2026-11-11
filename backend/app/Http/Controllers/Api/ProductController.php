@@ -52,7 +52,7 @@ class ProductController extends Controller
         };
 
         $perPage = (int) $request->get('per_page', 12);
-        $paginator = $query->paginate($perPage);
+        $paginator = $query->paginate($perPage)->withQueryString();
 
         return response()->json([
             'status'  => 'success',
@@ -108,6 +108,22 @@ class ProductController extends Controller
         ]);
 
         $product = Product::findOrFail($id);
+
+        // Validasi Anti-Review Bombing: Konsumen harus sudah pernah membeli produk dan berstatus 'selesai'
+        $hasPurchased = \App\Models\Order::where('user_id', $user->id)
+            ->where('status', 'selesai')
+            ->whereHas('details', function ($query) use ($product) {
+                $query->where('product_id', $product->id);
+            })
+            ->exists();
+
+        if (!$hasPurchased) {
+            return response()->json([
+                'status'  => 'error',
+                'success' => false,
+                'message' => 'Anda hanya dapat memberikan ulasan untuk produk yang sudah pernah Anda beli dan terima (status pesanan selesai).',
+            ], 403);
+        }
 
         $review = \App\Models\Review::updateOrCreate(
             [

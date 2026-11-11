@@ -32,11 +32,11 @@ class OrderController extends Controller
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('order_number', 'like', "%{$searchTerm}%")
                   ->orWhereHas('user', fn($u) => $u->where('nama', 'like', "%{$searchTerm}%")->orWhere('email', 'like', "%{$searchTerm}%"))
-                  ->orWhereHas('shipping', fn($s) => $s->where('nama_penerima', 'like', "%{$searchTerm}%")->orWhere('no_hp', 'like', "%{$searchTerm}%"));
+                  ->orWhereHas('shipping', fn($s) => $s->where('penerima_nama', 'like', "%{$searchTerm}%")->orWhere('penerima_telepon', 'like', "%{$searchTerm}%"));
             });
         }
 
-        $orders = $query->orderBy('id', 'desc')->paginate($request->get('per_page', 50));
+        $orders = $query->orderBy('id', 'desc')->paginate($request->get('per_page', 50))->withQueryString();
 
         return response()->json([
             'status'  => 'success',
@@ -58,14 +58,15 @@ class OrderController extends Controller
         $order = Order::with(['unit', 'user', 'payment.verifier', 'shipping', 'details.product'])->find($id);
 
         if (!$order) {
-            return response()->json(['success' => false, 'message' => 'Pesanan tidak ditemukan.'], 404);
+            return response()->json(['status' => 'error', 'success' => false, 'message' => 'Pesanan tidak ditemukan.'], 404);
         }
 
         if ($user->role === 'admin_unit' && $order->unit_id != $user->unit_id) {
-            return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
+            return response()->json(['status' => 'error', 'success' => false, 'message' => 'Akses ditolak.'], 403);
         }
 
         return response()->json([
+            'status'  => 'success',
             'success' => true,
             'data'    => $order,
         ]);
@@ -74,38 +75,64 @@ class OrderController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $user = $request->user();
+        if (!in_array($user->role, ['superadmin', 'admin_unit'])) {
+            return response()->json(['status' => 'error', 'success' => false, 'message' => 'Akses ditolak.'], 403);
+        }
+
         $order = Order::with(['shipping', 'unit', 'user', 'payment', 'details'])->find($id);
 
         if (!$order) {
-            return response()->json(['success' => false, 'message' => 'Pesanan tidak ditemukan.'], 404);
+            return response()->json(['status' => 'error', 'success' => false, 'message' => 'Pesanan tidak ditemukan.'], 404);
         }
 
         if ($user->role === 'admin_unit' && $order->unit_id != $user->unit_id) {
-            return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
+            return response()->json(['status' => 'error', 'success' => false, 'message' => 'Akses ditolak.'], 403);
         }
 
         $request->validate([
-            'status'  => 'required|in:pending,menunggu_pembayaran,menunggu_verifikasi,diproses,dikirim,selesai,dibatalkan',
-            'no_resi' => 'nullable|string',
+            'status'            => 'nullable|in:pending,menunggu_pembayaran,menunggu_verifikasi,diproses,dikirim,selesai,dibatalkan',
+            'no_resi'           => 'nullable|string',
+            'status_pengiriman' => 'nullable|string',
+            'catatan_admin'     => 'nullable|string',
+            'catatan'           => 'nullable|string',
         ]);
 
         $oldStatus = $order->status;
-        $order->status = $request->status;
-        $order->save();
+        $newStatus = $request->input('status', $oldStatus);
 
-        if ($order->shipping) {
-            if ($request->filled('no_resi')) {
-                $order->shipping->no_resi = $request->no_resi;
+        \Illuminate\Support\Facades\DB::transaction(function () use ($order, $request, $oldStatus, $newStatus, $user) {
+            $order->status = $newStatus;
+            $order->save();
+
+            // Kembalikan stok jika admin mengubah status pesanan menjadi dibatalkan
+            if ($newStatus === 'dibatalkan' && $oldStatus !== 'dibatalkan') {
+                \App\Services\StockService::restoreOrderStock(
+                    $order,
+                    "Pengembalian stok dari pembatalan oleh Admin #{$order->order_number}",
+                    $user->id
+                );
             }
-            if ($request->status === 'dikirim') {
-                $order->shipping->status = 'dikirim';
-            } elseif ($request->status === 'selesai') {
-                $order->shipping->status = 'selesai';
-            } elseif ($request->status === 'diproses') {
-                $order->shipping->status = 'dikemas';
+
+            if ($order->shipping) {
+                if ($request->filled('no_resi')) {
+                    $order->shipping->no_resi = $request->no_resi;
+                }
+                if ($request->filled('status_pengiriman')) {
+                    $shipStatus = $request->status_pengiriman;
+                    if ($shipStatus === 'diterima' || $shipStatus === 'selesai') {
+                        $shipStatus = 'sampai';
+                    }
+                    $order->shipping->status = $shipStatus;
+                } elseif ($newStatus === 'dikirim') {
+                    $order->shipping->status = 'dikirim';
+                } elseif ($newStatus === 'selesai') {
+                    $order->shipping->status = 'sampai';
+                } elseif ($newStatus === 'diproses') {
+                    $order->shipping->status = 'dikemas';
+                }
+                $order->shipping->save();
             }
-            $order->shipping->save();
-        }
+        });
 
         $catatanAdmin = $request->get('catatan_admin') ?? $request->get('catatan');
 

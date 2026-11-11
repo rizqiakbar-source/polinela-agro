@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import client from '../../api/client';
 import { Ticket, Plus, Edit2, Trash2, Calendar } from 'lucide-react';
-import { formatRupiah } from '../../utils/format';
+import { formatRupiah, formatDateShort } from '../../utils/format';
 
 const AdminVouchers = () => {
     const [vouchers, setVouchers] = useState([]);
@@ -165,7 +165,7 @@ const AdminVouchers = () => {
                                             </span>
                                         </td>
                                         <td className="small text-muted">
-                                            {v.tgl_mulai || '-'} s/d {v.tgl_berakhir || '-'}
+                                            {formatDateShort(v.tgl_mulai)} s/d {formatDateShort(v.tgl_berakhir)}
                                         </td>
                                         <td>
                                             <span className={`badge rounded-pill ${v.is_active ? 'bg-success' : 'bg-secondary'}`}>

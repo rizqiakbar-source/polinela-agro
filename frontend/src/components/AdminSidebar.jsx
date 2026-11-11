@@ -23,36 +23,59 @@ import {
     Sun,
     Moon,
     User,
-    ShieldCheck
+    ShieldCheck,
+    X
 } from 'lucide-react';
 
-const AdminSidebar = () => {
+const AdminSidebar = ({ isOpen = false, onClose = () => {} }) => {
     const { user, isSuperadmin, isAdminUnit, isPimpinan, logout } = useAuth();
     const { isDark, toggleTheme } = useTheme();
 
     return (
-        <div className="admin-sidebar-forest d-flex flex-column flex-shrink-0 p-3" style={{ width: '275px', minHeight: '100vh' }}>
+        <div 
+            className={`admin-sidebar-forest flex-column flex-shrink-0 p-3 ${isOpen ? 'd-flex' : 'd-none d-lg-flex'}`} 
+            style={{ 
+                width: '275px', 
+                minHeight: '100vh',
+                position: isOpen ? 'fixed' : 'relative',
+                top: 0,
+                left: 0,
+                bottom: 0,
+                zIndex: isOpen ? 1050 : 'auto',
+                boxShadow: isOpen ? '4px 0 30px rgba(0,0,0,0.5)' : undefined
+            }}
+        >
             {/* Brand Header */}
-            <div className="admin-sidebar-brand d-flex align-items-center gap-2 mb-3 pb-3">
-                <div className="admin-sidebar-logo-box">
-                    <img 
-                        src="/logo-polinela.png" 
-                        alt="Polinela" 
-                        style={{ width: '32px', height: '32px', objectFit: 'contain' }} 
-                    />
+            <div className="admin-sidebar-brand d-flex align-items-center justify-content-between mb-3 pb-3">
+                <div className="d-flex align-items-center gap-2">
+                    <div className="admin-sidebar-logo-box">
+                        <img 
+                            src="/logo-polinela.png" 
+                            alt="Polinela" 
+                            style={{ width: '32px', height: '32px', objectFit: 'contain' }} 
+                        />
+                    </div>
+                    <div>
+                        <h6 className="fw-bold mb-0 text-white" style={{ letterSpacing: '0.6px' }}>POLINELA AGRO</h6>
+                        <small className="d-flex align-items-center gap-1" style={{ fontSize: '10px', color: '#86efac', letterSpacing: '0.5px', fontWeight: 600 }}>
+                            {isSuperadmin ? (
+                                <><ShieldCheck size={11} className="text-warning" /> SUPERADMIN MASTER</>
+                            ) : isAdminUnit ? (
+                                <><Store size={11} className="text-light" /> PANEL ADMIN UNIT</>
+                            ) : (
+                                <><BarChart3 size={11} className="text-info" /> PORTAL PIMPINAN</>
+                            )}
+                        </small>
+                    </div>
                 </div>
-                <div>
-                    <h6 className="fw-bold mb-0 text-white" style={{ letterSpacing: '0.6px' }}>POLINELA AGRO</h6>
-                    <small className="d-flex align-items-center gap-1" style={{ fontSize: '10px', color: '#86efac', letterSpacing: '0.5px', fontWeight: 600 }}>
-                        {isSuperadmin ? (
-                            <><ShieldCheck size={11} className="text-warning" /> SUPERADMIN MASTER</>
-                        ) : isAdminUnit ? (
-                            <><Store size={11} className="text-light" /> PANEL ADMIN UNIT</>
-                        ) : (
-                            <><BarChart3 size={11} className="text-info" /> PORTAL PIMPINAN</>
-                        )}
-                    </small>
-                </div>
+                <button 
+                    type="button"
+                    onClick={onClose} 
+                    className="btn btn-sm btn-link text-white-50 d-lg-none p-1"
+                    aria-label="Tutup Menu"
+                >
+                    <X size={18} />
+                </button>
             </div>
 
             {/* User Unit Info Badge */}
@@ -82,7 +105,11 @@ const AdminSidebar = () => {
             </div>
 
             {/* Scrollable Navigation Menus */}
-            <div className="admin-sidebar-scroll overflow-y-auto flex-grow-1 pe-1" style={{ maxHeight: 'calc(100vh - 280px)' }}>
+            <div 
+                className="admin-sidebar-scroll overflow-y-auto flex-grow-1 pe-1" 
+                style={{ maxHeight: 'calc(100vh - 280px)' }}
+                onClick={(e) => { if (e.target.closest('a')) onClose(); }}
+            >
                 {/* Section: MENU UTAMA */}
                 <div className="admin-sidebar-section-title px-3 mb-1">
                     Menu Utama
